@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>RO 순수 점검일지 시스템</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header class="top-header">
+        <div class="header-container">
+            <div class="brand">
+                <span class="logo-icon">💧</span>
+                <div class="brand-text">
+                    <h1>RO 순수 점검일지</h1>
+                    <span class="sub-title">스마트 현장 점검 & 트렌드 분석 시스템</span>
+                </div>
+            </div>
+            
+            <div class="view-mode-toggle">
+                <button id="btn-mode-form" class="mode-btn active" onclick="switchViewMode('form')">
+                    <span>📝</span> 점검 작성
+                </button>
+                <button id="btn-mode-dashboard" class="mode-btn" onclick="switchViewMode('dashboard')">
+                    <span>📈</span> 트렌드 & 히스토리
+                </button>
+            </div>
+        </div>
+
+        <!-- Building Tab Bar -->
+        <nav class="building-tabs-scroll">
+            <div class="building-tabs" id="building-tabs">
+                <!-- Dynamically populated -->
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <!-- VIEW 1: 점검 작성 Web Form -->
+        <section id="view-form" class="view-section active">
+            <form id="inspection-form" onsubmit="handleFormSubmit(event)">
+                <div class="meta-card">
+                    <div class="meta-row">
+                        <div class="meta-group">
+                            <label for="input-date">📅 점검 일자</label>
+                            <input type="date" id="input-date" required>
+                        </div>
+                        <div class="meta-group">
+                            <label for="input-inspector">👤 점검자</label>
+                            <input type="text" id="input-inspector" placeholder="성명 입력 (예: 홍길동)" required>
+                        </div>
+                        <div class="meta-group" id="line-select-group" style="display: none;">
+                            <label for="input-line">🏷️ 라인 구분</label>
+                            <select id="input-line"></select>
+                        </div>
+                        <div class="meta-group meta-btn-group">
+                            <button type="button" class="btn-copy-prev" onclick="copyPreviousLog()">
+                                📋 이전 점검 값 불러오기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Structured Spreadsheet Tables -->
+                <div id="form-fields-container">
+                    <!-- Dynamic Content -->
+                </div>
+
+                <div class="notes-card">
+                    <label for="input-notes">📝 특이사항 및 비고</label>
+                    <textarea id="input-notes" rows="3" placeholder="특이사항이나 장비 교체/이상 메모를 작성하세요..."></textarea>
+                </div>
+
+                <div class="submit-bar">
+                    <button type="submit" class="btn-submit">
+                        <span>💾</span> 점검일지 저장하기
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- VIEW 2: 데스크톱 트렌드 차트 & 히스토리 데이터 관리 -->
+        <section id="view-dashboard" class="view-section">
+            <!-- Global Date Range Filter Bar for Trends, History & Excel Export -->
+            <div class="dashboard-card filter-card">
+                <div class="global-filter-row">
+                    <div class="filter-group">
+                        <label for="filter-start-date">📅 조회 시작일:</label>
+                        <input type="date" id="filter-start-date" onchange="onGlobalFilterChange()">
+                    </div>
+                    <div class="filter-group">
+                        <label for="filter-end-date">📅 조회 종료일:</label>
+                        <input type="date" id="filter-end-date" onchange="onGlobalFilterChange()">
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" class="btn-reset" onclick="resetFilters()">
+                            🔄 전체보기 (초기화)
+                        </button>
+                        <button type="button" class="btn-excel-export" onclick="exportExcel()">
+                            <span>📥</span> 선택 기간 엑셀 내보내기 (.csv)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trend Chart Card -->
+            <div class="dashboard-card trend-card">
+                <div class="card-header">
+                    <h2>📈 점검 항목별 기간 트렌드 분석</h2>
+                    <div class="chart-controls">
+                        <label for="select-trend-field">분석 항목 선택:</label>
+                        <select id="select-trend-field" onchange="renderTrendChart()"></select>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- History Logs Table Card -->
+            <div class="dashboard-card history-card">
+                <div class="card-header">
+                    <h2>📋 점검 기록 히스토리 목록</h2>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>점검일자</th>
+                                <th>구분 / 라인</th>
+                                <th>점검자</th>
+                                <th>주요 수치 요약</th>
+                                <th>비고</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody">
+                            <!-- Dynamic history rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Detail / Edit Modal -->
+    <div id="modal-container" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">점검 기록 상세보기</h3>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic Content -->
+            </div>
+            <div class="modal-footer" id="modal-footer">
+                <button class="btn-secondary" onclick="closeModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast">저장되었습니다</div>
+
+    <script src="app.js"></script>
+</body>
+</html>
