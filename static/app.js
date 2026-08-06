@@ -13,6 +13,8 @@ const COLOR_PALETTE = {
     "2": "#16a34a",
     "3": "#ea580c",
     "4": "#9333ea",
+    "전단": "#0284c7",
+    "후단": "#ea580c",
     "default": "#2563eb"
 };
 
@@ -46,25 +48,41 @@ async function checkAuthAndInit() {
 }
 
 function showLoggedOutState() {
-    document.getElementById("header-login-area").style.display = "flex";
-    document.getElementById("header-user-area").style.display = "none";
-    document.getElementById("auth-lock-banner").style.display = "block";
-    document.getElementById("auth-content-area").style.display = "none";
+    const loginArea = document.getElementById("header-login-area");
+    const userArea = document.getElementById("header-user-area");
+    const lockBanner = document.getElementById("auth-lock-banner");
+    const contentArea = document.getElementById("auth-content-area");
+    
+    if (loginArea) loginArea.style.setProperty("display", "flex", "important");
+    if (userArea) userArea.style.setProperty("display", "none", "important");
+    if (lockBanner) lockBanner.style.setProperty("display", "block", "important");
+    if (contentArea) contentArea.style.setProperty("display", "none", "important");
+    
+    // Clear input fields on logout
+    const idInput = document.getElementById("inline-login-id");
+    const pwInput = document.getElementById("inline-login-pw");
+    if (idInput) idInput.value = "";
+    if (pwInput) pwInput.value = "";
 }
 
 function showLoggedInState() {
-    document.getElementById("header-login-area").style.display = "none";
-    document.getElementById("header-user-area").style.display = "flex";
-    document.getElementById("auth-lock-banner").style.display = "none";
-    document.getElementById("auth-content-area").style.display = "block";
+    const loginArea = document.getElementById("header-login-area");
+    const userArea = document.getElementById("header-user-area");
+    const lockBanner = document.getElementById("auth-lock-banner");
+    const contentArea = document.getElementById("auth-content-area");
+    
+    if (loginArea) loginArea.style.setProperty("display", "none", "important");
+    if (userArea) userArea.style.setProperty("display", "flex", "important");
+    if (lockBanner) lockBanner.style.setProperty("display", "none", "important");
+    if (contentArea) contentArea.style.setProperty("display", "block", "important");
 }
 
 async function handleInlineLoginSubmit(e) {
-    e.preventDefault();
+    if (e) e.preventDefault();
     const idInput = document.getElementById("inline-login-id").value.trim();
     const pwInput = document.getElementById("inline-login-pw").value.trim();
     const errDiv = document.getElementById("inline-login-error");
-    errDiv.textContent = "";
+    if (errDiv) errDiv.textContent = "";
 
     try {
         const res = await fetch("/api/login", {
@@ -74,8 +92,8 @@ async function handleInlineLoginSubmit(e) {
         });
         const data = await res.json();
         if (!res.ok) {
-            errDiv.textContent = data.detail || "오류";
-            return;
+            if (errDiv) errDiv.textContent = data.detail || "오류";
+            return false;
         }
         
         authToken = data.token;
@@ -83,8 +101,10 @@ async function handleInlineLoginSubmit(e) {
         showLoggedInState();
         initApp();
         showToast("로그인 성공!");
+        return false;
     } catch (err) {
-        errDiv.textContent = "연결 오류";
+        if (errDiv) errDiv.textContent = "연결 오류";
+        return false;
     }
 }
 
@@ -164,7 +184,7 @@ function switchViewMode(mode) {
     }
 }
 
-// Render Form with 2-col (A/B), 3-col (A/B/C), 4-col (EDI A/B/C/D) Multi-Column Grid
+// Render Form with Clean Item Titles & 2x2/4-Col Grid (No '수치' placeholder!)
 function loadBuildingForm(buildingCode) {
     const schema = buildingSchemas[buildingCode];
     if (!schema) return;
@@ -233,7 +253,7 @@ function groupFieldsForMultiColumn(fields) {
     
     fields.forEach(f => {
         if (f.group) {
-            const baseLabel = f.label.replace(/\s+[A-D]$/, '').replace(/\s+A\/B\/C\/D/, '').replace(/\s+[A-D]-[1-4]/, '');
+            const baseLabel = f.label.replace(/\s+[A-D]$/, '').replace(/\s+A\/B\/C\/D/, '').replace(/\s+[A-D]-[1-4]/, '').replace(/\s+\(전단\)/, '').replace(/\s+\(후단\)/, '');
             if (!map.has(f.group)) {
                 const groupObj = { baseLabel: baseLabel, fields: [] };
                 map.set(f.group, groupObj);
@@ -251,7 +271,7 @@ function groupFieldsForMultiColumn(fields) {
 function renderFieldInputCell(f) {
     const groupAttr = f.group ? `data-group="${f.group}"` : '';
     const subAttr = f.sub ? `data-sub="${f.sub}"` : '';
-    const subLabel = f.sub ? `라인 ${f.sub}` : f.label;
+    const subLabel = f.sub ? (isNaN(f.sub) && f.sub !== "전단" && f.sub !== "후단" ? `라인 ${f.sub}` : `${f.sub}`) : f.label;
     
     if (f.type === "select") {
         return `
@@ -274,7 +294,7 @@ function renderFieldInputCell(f) {
             </div>
             <div class="cell-input-container">
                 <input type="number" step="any" inputmode="decimal" id="input-${f.key}" name="${f.key}" 
-                       placeholder="수치" oninput="handleInputChange(this)">
+                       placeholder="" oninput="handleInputChange(this)">
                 ${f.unit ? `<span class="unit-suffix-inline">${f.unit}</span>` : ''}
             </div>
         </div>
@@ -367,7 +387,7 @@ function evaluateStandbyGroups() {
                     const input = c.querySelector('input, select');
                     if (input) {
                         input.disabled = false;
-                        input.placeholder = "수치";
+                        input.placeholder = "";
                     }
                     const key = c.id.replace('cell-', '');
                     const badge = document.getElementById(`badge-${key}`);
@@ -465,7 +485,7 @@ async function handleFormSubmit(e) {
     }
 }
 
-// Dashboard Filters & Multi-Line Trend Charts (Pumps A/B/C/D, EDI 4-modules together!)
+// Dashboard Filters & Multi-Line Trend Charts
 async function onGlobalFilterChange() {
     const startDate = document.getElementById("filter-start-date").value;
     const endDate = document.getElementById("filter-end-date").value;
@@ -491,13 +511,12 @@ function populateTrendSelectOptions() {
     const addedGroups = new Set();
     
     schema.sections.forEach(sec => {
-        // First add grouped multi-line comparison options
         sec.fields.forEach(f => {
             if (f.group && !addedGroups.has(f.group)) {
                 addedGroups.add(f.group);
                 const groupFields = sec.fields.filter(x => x.group === f.group);
                 if (groupFields.length > 1) {
-                    const baseLabel = f.label.replace(/\s+[A-D]$/, '').replace(/\s+A\/B\/C\/D/, '');
+                    const baseLabel = f.label.replace(/\s+[A-D]$/, '').replace(/\s+A\/B\/C\/D/, '').replace(/\s+\(전단\)/, '').replace(/\s+\(후단\)/, '');
                     const opt = document.createElement("option");
                     opt.value = `GROUP:${f.group}`;
                     opt.textContent = `📊 [통합 비교] ${baseLabel} (${groupFields.map(x => x.sub).join('/')})`;
@@ -506,7 +525,6 @@ function populateTrendSelectOptions() {
             }
         });
         
-        // Next add individual single field options
         sec.fields.forEach(f => {
             if (f.type !== "select") {
                 const opt = document.createElement("option");
@@ -531,7 +549,6 @@ async function renderTrendChart() {
     }
     
     if (selectedVal.startsWith("GROUP:")) {
-        // Multi-line comparison chart (e.g. Pump A/B/C, EDI A/B/C/D together!)
         const groupName = selectedVal.replace("GROUP:", "");
         const schema = buildingSchemas[currentBuildingCode];
         
@@ -544,7 +561,7 @@ async function renderTrendChart() {
         
         const datasets = [];
         let allDates = new Set();
-        const dateValuesMap = {}; // { date: { fieldKey: value } }
+        const dateValuesMap = {};
         
         for (const f of targetFields) {
             let url = `/api/trends?building_code=${currentBuildingCode}&field_key=${f.key}`;
@@ -599,9 +616,8 @@ async function renderTrendChart() {
             }
         });
     } else {
-        // Single field trend chart
         let url = `/api/trends?building_code=${currentBuildingCode}&field_key=${selectedVal}`;
-        if (startDate) url += `&start_date=${startDate}`;
+        if (startDate) url += `&start_date=${selectedVal}`;
         if (endDate) url += `&end_date=${endDate}`;
         
         try {

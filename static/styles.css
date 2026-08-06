@@ -83,7 +83,7 @@ body {
     font-weight: 500;
 }
 
-/* Inline Login Area in Header (Yellow Circle Location) */
+/* Inline Login Area in Header */
 .header-login-box {
     display: flex;
     flex-direction: column;
@@ -347,7 +347,7 @@ input.is-modified-value, select.is-modified-value {
     background: #ffffff;
 }
 
-/* Multi-Column Grid Layouts for A/B (2 cols), A/B/C (3 cols), EDI A/B/C/D (4 cols) */
+/* Multi-Column Grid Layouts */
 .excel-paper-wrapper {
     background: #ffffff;
     border: 1px solid #cbd5e1;
@@ -373,7 +373,7 @@ input.is-modified-value, select.is-modified-value {
     padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
 }
 
 .grid-row-item {
@@ -396,6 +396,10 @@ input.is-modified-value, select.is-modified-value {
 .grid-cols-container {
     display: grid;
     gap: 8px;
+}
+
+.grid-1col {
+    grid-template-columns: 1fr;
 }
 
 .grid-2col {
@@ -481,7 +485,7 @@ input.is-modified-value, select.is-modified-value {
     border: 1px solid #cbd5e1;
 }
 
-/* Number Input (No Stepper Buttons for max space) */
+/* Number Input (Empty placeholder, NO '수치' text!) */
 .cell-input-container {
     position: relative;
     width: 100%;
@@ -754,9 +758,9 @@ input.is-modified-value, select.is-modified-value {
         justify-content: center;
     }
     
-    /* Grid Column Responsive adjustments on small mobile screens */
+    /* 4-col wraps into a clean 2x2 grid on mobile phone screens! */
     .grid-4col {
-        grid-template-columns: repeat(2, 1fr); /* 4-col wraps into 2x2 grid on narrow phone screens */
+        grid-template-columns: repeat(2, 1fr);
     }
     .grid-3col {
         grid-template-columns: repeat(3, 1fr);
