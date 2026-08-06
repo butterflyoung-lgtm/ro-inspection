@@ -35,96 +35,6 @@ body {
     padding-bottom: 80px;
 }
 
-/* Login Modal Screen */
-.login-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(8px);
-    z-index: 999;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.login-overlay.active {
-    display: flex;
-}
-
-.login-card {
-    background: #ffffff;
-    border: 1px solid var(--card-border);
-    border-radius: var(--radius-lg);
-    width: 100%;
-    max-width: 380px;
-    padding: 28px 24px;
-    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.3);
-    text-align: center;
-}
-
-.login-icon {
-    font-size: 2.4rem;
-    display: inline-block;
-    margin-bottom: 8px;
-}
-
-.login-header h2 {
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: #1e3a8a;
-    margin-bottom: 4px;
-}
-
-.login-header p {
-    font-size: 0.82rem;
-    color: var(--text-sub);
-    margin-bottom: 20px;
-}
-
-.login-form {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    text-align: left;
-}
-
-.login-form label {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: var(--text-main);
-}
-
-.login-form input {
-    height: 44px;
-    font-size: 1rem;
-}
-
-.btn-login {
-    background: var(--primary-color);
-    color: #ffffff;
-    border: none;
-    padding: 12px;
-    font-size: 1rem;
-    font-weight: 800;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    margin-top: 6px;
-    box-shadow: 0 4px 10px rgba(30, 64, 175, 0.3);
-}
-
-.btn-login:hover {
-    background: var(--primary-hover);
-}
-
-.login-error {
-    color: var(--danger-color);
-    font-size: 0.82rem;
-    font-weight: 700;
-    text-align: center;
-    min-height: 18px;
-}
-
 /* Header & Navigation */
 .top-header {
     background: #ffffff;
@@ -138,22 +48,22 @@ body {
 .header-container {
     max-width: 1280px;
     margin: 0 auto;
-    padding: 12px 16px;
+    padding: 10px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 10px;
 }
 
 .brand {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .logo-icon {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
     border-radius: 8px;
@@ -161,22 +71,84 @@ body {
 }
 
 .brand-text h1 {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     font-weight: 800;
     color: #1e3a8a;
     letter-spacing: -0.5px;
 }
 
 .sub-title {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--text-sub);
     font-weight: 500;
+}
+
+/* Inline Login Area in Header (Yellow Circle Location) */
+.header-login-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.inline-login-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.inline-login-form input {
+    width: 110px;
+    height: 36px;
+    font-size: 0.88rem;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.btn-header-login {
+    background: var(--primary-color);
+    color: #ffffff;
+    border: none;
+    padding: 0 14px;
+    height: 36px;
+    font-size: 0.88rem;
+    font-weight: 800;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-header-login:hover {
+    background: var(--primary-hover);
+}
+
+.inline-login-error {
+    color: var(--danger-color);
+    font-size: 0.75rem;
+    font-weight: 700;
+    min-height: 14px;
+}
+
+.header-user-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-badge {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    border-radius: var(--radius-sm);
 }
 
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .view-mode-toggle {
@@ -191,7 +163,7 @@ body {
     background: transparent;
     border: none;
     color: var(--text-sub);
-    padding: 6px 14px;
+    padding: 6px 12px;
     font-size: 0.85rem;
     font-weight: 700;
     border-radius: var(--radius-sm);
@@ -212,6 +184,7 @@ body {
     border: 1px solid #cbd5e1;
     color: var(--text-sub);
     padding: 6px 12px;
+    height: 36px;
     font-size: 0.82rem;
     font-weight: 700;
     border-radius: var(--radius-sm);
@@ -223,7 +196,7 @@ body {
     color: var(--danger-color);
 }
 
-/* Building Tab Bar */
+/* Building Tab Bar (Always Visible) */
 .building-tabs-scroll {
     overflow-x: auto;
     border-top: 1px solid #e2e8f0;
@@ -256,6 +229,35 @@ body {
     border-color: var(--primary-color);
 }
 
+/* Auth Lock Card */
+.auth-lock-card {
+    background: #ffffff;
+    border: 2px dashed #cbd5e1;
+    border-radius: var(--radius-lg);
+    padding: 40px 20px;
+    text-align: center;
+    margin: 30px auto;
+    max-width: 500px;
+    box-shadow: var(--shadow-card);
+}
+
+.auth-lock-card .lock-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+}
+
+.auth-lock-card h3 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #1e3a8a;
+    margin-bottom: 6px;
+}
+
+.auth-lock-card p {
+    font-size: 0.9rem;
+    color: var(--text-sub);
+}
+
 /* Main Content */
 .main-content {
     max-width: 1280px;
@@ -273,12 +275,12 @@ body {
     display: block;
 }
 
-/* Cards & High-Density Form */
+/* Cards & Form Containers */
 .meta-card, .notes-card, .dashboard-card {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     border-radius: var(--radius-md);
-    padding: 14px 16px;
+    padding: 12px 14px;
     margin-bottom: 14px;
     box-shadow: var(--shadow-card);
 }
@@ -323,7 +325,7 @@ textarea {
     background: var(--input-bg);
     border: 1.5px solid var(--input-border);
     color: var(--text-main);
-    padding: 8px 12px;
+    padding: 8px 10px;
     font-size: 0.95rem;
     font-weight: 600;
     border-radius: var(--radius-sm);
@@ -345,7 +347,7 @@ input.is-modified-value, select.is-modified-value {
     background: #ffffff;
 }
 
-/* High Density Compact Form Table Layout */
+/* Multi-Column Grid Layouts for A/B (2 cols), A/B/C (3 cols), EDI A/B/C/D (4 cols) */
 .excel-paper-wrapper {
     background: #ffffff;
     border: 1px solid #cbd5e1;
@@ -358,7 +360,7 @@ input.is-modified-value, select.is-modified-value {
 .excel-section-banner {
     background: #e2e8f0;
     color: #1e3a8a;
-    font-size: 0.98rem;
+    font-size: 0.95rem;
     font-weight: 800;
     padding: 10px 14px;
     border-bottom: 2px solid #cbd5e1;
@@ -367,50 +369,87 @@ input.is-modified-value, select.is-modified-value {
     justify-content: space-between;
 }
 
-.excel-form-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.92rem;
+.grid-card-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
-.excel-form-table th {
+.grid-row-item {
     background: #f8fafc;
-    color: #334155;
-    font-weight: 700;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-sm);
     padding: 10px 12px;
-    border-bottom: 2px solid #cbd5e1;
-    border-right: 1px solid #e2e8f0;
-    text-align: left;
 }
 
-.excel-form-table td {
-    padding: 8px 12px;
-    border-bottom: 1px solid #e2e8f0;
-    border-right: 1px solid #e2e8f0;
-    vertical-align: middle;
+.grid-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #1e3a8a;
 }
 
-.excel-form-table tr:hover {
-    background: #f8fafc;
+.grid-cols-container {
+    display: grid;
+    gap: 8px;
 }
 
-/* Locked / Standby Inactive Field Styling */
-.excel-form-table tr.is-standby-locked {
+.grid-2col {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3col {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4col {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.grid-col-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+}
+
+.cell-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.cell-title {
+    color: #334155;
+}
+
+/* Locked Standby Styling */
+.grid-col-cell.is-standby-locked {
     background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
     opacity: 0.65;
 }
 
-.excel-form-table tr.is-standby-locked input {
+.grid-col-cell.is-standby-locked input {
     background: #e2e8f0 !important;
     color: #94a3b8 !important;
     cursor: not-allowed;
 }
 
 .status-badge {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 10px;
+    padding: 2px 6px;
+    border-radius: 8px;
     display: inline-block;
 }
 
@@ -426,64 +465,44 @@ input.is-modified-value, select.is-modified-value {
     border: 1px solid #fca5a5;
 }
 
-.item-title {
-    font-weight: 700;
-    color: var(--text-main);
-}
-
 .unit-badge {
     color: #64748b;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 600;
 }
 
 .range-badge {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 10px;
+    padding: 2px 6px;
+    border-radius: 8px;
     background: #f1f5f9;
     color: #475569;
     border: 1px solid #cbd5e1;
-    display: inline-block;
 }
 
-.input-stepper-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+/* Number Input (No Stepper Buttons for max space) */
+.cell-input-container {
+    position: relative;
     width: 100%;
 }
 
-.stepper-btn {
-    background: #f1f5f9;
-    border: 1px solid #cbd5e1;
-    color: #1e293b;
-    width: 38px;
+.cell-input-container input[type="number"] {
+    width: 100%;
     height: 38px;
-    border-radius: var(--radius-sm);
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 800;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    user-select: none;
-    touch-action: manipulation;
+    text-align: center;
+    padding-right: 22px;
 }
 
-.stepper-input-container {
-    flex: 1;
-    position: relative;
-}
-
-.unit-suffix {
+.unit-suffix-inline {
     position: absolute;
-    right: 8px;
+    right: 6px;
     top: 50%;
     transform: translateY(-50%);
     color: #64748b;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
     pointer-events: none;
 }
@@ -706,93 +725,43 @@ input.is-modified-value, select.is-modified-value {
     transform: translateX(-50%) translateY(0);
 }
 
-/* 📱 Mobile High Density Compact Layout (< 640px) */
+/* 📱 Mobile Responsiveness (< 640px) */
 @media (max-width: 640px) {
     .header-container {
         flex-direction: column;
-        align-items: flex-start;
-        padding: 8px 12px;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .header-login-box {
+        width: 100%;
+        order: 2;
+    }
+    .inline-login-form {
+        width: 100%;
+    }
+    .inline-login-form input {
+        flex: 1;
     }
     .header-actions {
         width: 100%;
-        justify-content: space-between;
+        order: 3;
     }
     .view-mode-toggle {
-        flex: 1;
+        width: 100%;
     }
     .mode-btn {
         flex: 1;
         justify-content: center;
-        padding: 8px;
-    }
-    .main-content {
-        padding: 10px 6px;
-    }
-    .global-filter-row {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .filter-actions {
-        margin-left: 0;
-        flex-direction: column;
-        width: 100%;
-    }
-    .btn-reset, .btn-excel-export {
-        width: 100%;
-        justify-content: center;
     }
     
-    /* Compact Card Layout for Mobile Screens */
-    .excel-form-table, .excel-form-table tbody, .excel-form-table tr, .excel-form-table td {
-        display: block;
-        width: 100%;
+    /* Grid Column Responsive adjustments on small mobile screens */
+    .grid-4col {
+        grid-template-columns: repeat(2, 1fr); /* 4-col wraps into 2x2 grid on narrow phone screens */
     }
-    .excel-form-table thead {
-        display: none;
+    .grid-3col {
+        grid-template-columns: repeat(3, 1fr);
     }
-    .excel-form-table tr {
-        border-bottom: 1px solid #cbd5e1;
-        padding: 8px 10px;
-        background: #ffffff;
-    }
-    .excel-form-table tr:nth-child(even) {
-        background: #f8fafc;
-    }
-    .excel-form-table td {
-        border: none !important;
-        padding: 2px 0;
-    }
-    
-    .excel-form-table td:nth-child(1) {
-        font-size: 0.95rem;
-        font-weight: 700;
-        color: #1e3a8a;
-    }
-    .excel-form-table td:nth-child(2) {
-        display: inline-block;
-        margin-right: 6px;
-    }
-    .excel-form-table td:nth-child(3) {
-        display: inline-block;
-        margin-bottom: 4px;
-    }
-    .excel-form-table td:nth-child(4) {
-        margin-top: 4px;
-    }
-    
-    .input-stepper-wrapper {
-        width: 100%;
-    }
-    
-    .stepper-btn {
-        width: 44px;
-        height: 44px;
-        font-size: 1.3rem;
-    }
-    
-    input[type="number"] {
-        height: 44px;
-        font-size: 1.1rem;
-        font-weight: 700;
+    .grid-2col {
+        grid-template-columns: repeat(2, 1fr);
     }
 }

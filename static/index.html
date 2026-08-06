@@ -12,30 +12,7 @@
 </head>
 <body>
 
-    <!-- Login Modal Screen -->
-    <div id="login-modal" class="login-overlay active">
-        <div class="login-card">
-            <div class="login-header">
-                <span class="login-icon">💧</span>
-                <h2>RO/EDI 점검일지 로그인</h2>
-                <p>사내 시스템 접속을 위해 로그인해 주세요</p>
-            </div>
-            <form onsubmit="handleLoginSubmit(event)" class="login-form">
-                <div class="input-group">
-                    <label for="login-id">아이디</label>
-                    <input type="text" id="login-id" placeholder="아이디 입력 (1234)" required autocomplete="username">
-                </div>
-                <div class="input-group">
-                    <label for="login-pw">비밀번호</label>
-                    <input type="password" id="login-pw" placeholder="비밀번호 입력 (5678)" required autocomplete="current-password">
-                </div>
-                <div id="login-error" class="login-error"></div>
-                <button type="submit" class="btn-login">로그인</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Main Application Header -->
+    <!-- Main Application Header with Inline Login in Yellow Area -->
     <header class="top-header">
         <div class="header-container">
             <div class="brand">
@@ -45,21 +22,36 @@
                     <span class="sub-title">B동·C동·D동·E동 현장 점검 시스템</span>
                 </div>
             </div>
+
+            <!-- Header Inline Login Area (Yellow Box Location) -->
+            <div id="header-login-area" class="header-login-box">
+                <form id="header-login-form" onsubmit="handleInlineLoginSubmit(event)" class="inline-login-form">
+                    <input type="text" id="inline-login-id" placeholder="아이디" required autocomplete="username">
+                    <input type="password" id="inline-login-pw" placeholder="비밀번호" required autocomplete="current-password">
+                    <button type="submit" class="btn-header-login">로그인</button>
+                </form>
+                <div id="inline-login-error" class="inline-login-error"></div>
+            </div>
+
+            <!-- Header User Info & Logout (Visible when logged in) -->
+            <div id="header-user-area" class="header-user-box" style="display: none;">
+                <span class="user-badge">👤 로그인됨 (1234)</span>
+                <button class="btn-logout" onclick="handleLogout()">로그아웃</button>
+            </div>
             
             <div class="header-actions">
                 <div class="view-mode-toggle">
                     <button id="btn-mode-form" class="mode-btn active" onclick="switchViewMode('form')">
-                        <span>📝</span> 점검 작성
+                        📝 점검 작성
                     </button>
                     <button id="btn-mode-dashboard" class="mode-btn" onclick="switchViewMode('dashboard')">
-                        <span>📈</span> 트렌드 & 히스토리
+                        📈 트렌드 & 히스토리
                     </button>
                 </div>
-                <button class="btn-logout" onclick="handleLogout()">로그아웃</button>
             </div>
         </div>
 
-        <!-- Building Tab Bar -->
+        <!-- Building Tab Bar (Always Visible) -->
         <nav class="building-tabs-scroll">
             <div class="building-tabs" id="building-tabs">
                 <!-- Dynamically populated -->
@@ -68,113 +60,119 @@
     </header>
 
     <main class="main-content">
-        <!-- VIEW 1: 점검 작성 Web Form -->
-        <section id="view-form" class="view-section active">
-            <form id="inspection-form" onsubmit="handleFormSubmit(event)">
-                <div class="meta-card">
-                    <div class="meta-row">
-                        <div class="meta-group">
-                            <label for="input-date">📅 점검 일자</label>
-                            <input type="date" id="input-date" required>
+        <!-- Auth Required Notice (Shown when logged out) -->
+        <div id="auth-lock-banner" class="auth-lock-card">
+            <div class="lock-icon">🔐</div>
+            <h3>로그인이 필요합니다</h3>
+            <p>상단 헤더의 로그인 영역에서 아이디와 비밀번호를 입력해 주세요.</p>
+        </div>
+
+        <!-- Authenticated View Container -->
+        <div id="auth-content-area" style="display: none;">
+            <!-- VIEW 1: 점검 작성 Web Form -->
+            <section id="view-form" class="view-section active">
+                <form id="inspection-form" onsubmit="handleFormSubmit(event)">
+                    <div class="meta-card">
+                        <div class="meta-row">
+                            <div class="meta-group">
+                                <label for="input-date">📅 점검 일자</label>
+                                <input type="date" id="input-date" required>
+                            </div>
+                            <div class="meta-group">
+                                <label for="input-inspector">👤 점검자</label>
+                                <input type="text" id="input-inspector" placeholder="성명 입력 (예: 홍길동)" required>
+                            </div>
+                            <div class="meta-group meta-btn-group">
+                                <button type="button" class="btn-copy-prev" onclick="copyPreviousLog()">
+                                    📋 이전 점검 값 불러오기
+                                </button>
+                            </div>
                         </div>
-                        <div class="meta-group">
-                            <label for="input-inspector">👤 점검자</label>
-                            <input type="text" id="input-inspector" placeholder="성명 입력 (예: 홍길동)" required>
+                    </div>
+
+                    <!-- Multi-Column Grid Form Fields Container -->
+                    <div id="form-fields-container">
+                        <!-- Dynamic Content -->
+                    </div>
+
+                    <div class="notes-card">
+                        <label for="input-notes">📝 특이사항 및 비고</label>
+                        <textarea id="input-notes" rows="2" placeholder="특이사항이나 장비 이상/교체 메모를 작성하세요..."></textarea>
+                    </div>
+
+                    <div class="submit-bar">
+                        <button type="submit" class="btn-submit">
+                            💾 점검일지 저장하기
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- VIEW 2: 트렌드 차트 & 히스토리 데이터 관리 -->
+            <section id="view-dashboard" class="view-section">
+                <!-- Global Date Range Filter Bar -->
+                <div class="dashboard-card filter-card">
+                    <div class="global-filter-row">
+                        <div class="filter-group">
+                            <label for="filter-start-date">📅 조회 시작일:</label>
+                            <input type="date" id="filter-start-date" onchange="onGlobalFilterChange()">
                         </div>
-                        <div class="meta-group" id="line-select-group" style="display: none;">
-                            <label for="input-line">🏷️ 라인 구분</label>
-                            <select id="input-line"></select>
+                        <div class="filter-group">
+                            <label for="filter-end-date">📅 조회 종료일:</label>
+                            <input type="date" id="filter-end-date" onchange="onGlobalFilterChange()">
                         </div>
-                        <div class="meta-group meta-btn-group">
-                            <button type="button" class="btn-copy-prev" onclick="copyPreviousLog()">
-                                📋 이전 점검 값 불러오기
+                        <div class="filter-actions">
+                            <button type="button" class="btn-reset" onclick="resetFilters()">
+                                🔄 전체보기 (초기화)
+                            </button>
+                            <button type="button" class="btn-excel-export" onclick="exportExcel()">
+                                📥 선택 기간 엑셀 내보내기 (.csv)
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Structured Mobile High-Density Form Container -->
-                <div id="form-fields-container">
-                    <!-- Dynamic Content -->
-                </div>
-
-                <div class="notes-card">
-                    <label for="input-notes">📝 특이사항 및 비고</label>
-                    <textarea id="input-notes" rows="2" placeholder="특이사항이나 장비 이상/교체 메모를 작성하세요..."></textarea>
-                </div>
-
-                <div class="submit-bar">
-                    <button type="submit" class="btn-submit">
-                        <span>💾</span> 점검일지 저장하기
-                    </button>
-                </div>
-            </form>
-        </section>
-
-        <!-- VIEW 2: 트렌드 차트 & 히스토리 데이터 관리 -->
-        <section id="view-dashboard" class="view-section">
-            <!-- Global Date Range Filter Bar -->
-            <div class="dashboard-card filter-card">
-                <div class="global-filter-row">
-                    <div class="filter-group">
-                        <label for="filter-start-date">📅 조회 시작일:</label>
-                        <input type="date" id="filter-start-date" onchange="onGlobalFilterChange()">
+                <!-- Trend Chart Card -->
+                <div class="dashboard-card trend-card">
+                    <div class="card-header">
+                        <h2>📈 점검 항목별 기간 트렌드 분석</h2>
+                        <div class="chart-controls">
+                            <label for="select-trend-field">분석 항목 선택:</label>
+                            <select id="select-trend-field" onchange="renderTrendChart()"></select>
+                        </div>
                     </div>
-                    <div class="filter-group">
-                        <label for="filter-end-date">📅 조회 종료일:</label>
-                        <input type="date" id="filter-end-date" onchange="onGlobalFilterChange()">
-                    </div>
-                    <div class="filter-actions">
-                        <button type="button" class="btn-reset" onclick="resetFilters()">
-                            🔄 전체보기 (초기화)
-                        </button>
-                        <button type="button" class="btn-excel-export" onclick="exportExcel()">
-                            <span>📥</span> 선택 기간 엑셀 내보내기 (.csv)
-                        </button>
+                    <div class="chart-wrapper">
+                        <canvas id="trendChart"></canvas>
                     </div>
                 </div>
-            </div>
 
-            <!-- Trend Chart Card -->
-            <div class="dashboard-card trend-card">
-                <div class="card-header">
-                    <h2>📈 점검 항목별 기간 트렌드 분석</h2>
-                    <div class="chart-controls">
-                        <label for="select-trend-field">분석 항목 선택:</label>
-                        <select id="select-trend-field" onchange="renderTrendChart()"></select>
+                <!-- History Logs Table Card -->
+                <div class="dashboard-card history-card">
+                    <div class="card-header">
+                        <h2>📋 점검 기록 히스토리 목록</h2>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>점검일자</th>
+                                    <th>구분 / 라인</th>
+                                    <th>점검자</th>
+                                    <th>주요 수치 요약</th>
+                                    <th>비고</th>
+                                    <th>관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-tbody">
+                                <!-- Dynamic history rows -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <div class="chart-wrapper">
-                    <canvas id="trendChart"></canvas>
-                </div>
-            </div>
-
-            <!-- History Logs Table Card -->
-            <div class="dashboard-card history-card">
-                <div class="card-header">
-                    <h2>📋 점검 기록 히스토리 목록</h2>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>점검일자</th>
-                                <th>구분 / 라인</th>
-                                <th>점검자</th>
-                                <th>주요 수치 요약</th>
-                                <th>비고</th>
-                                <th>관리</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-tbody">
-                            <!-- Dynamic history rows -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+            </section>
+        </div>
     </main>
 
     <!-- Detail Modal -->
