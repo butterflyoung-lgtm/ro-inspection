@@ -35,6 +35,96 @@ body {
     padding-bottom: 80px;
 }
 
+/* Login Modal Screen */
+.login-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-overlay.active {
+    display: flex;
+}
+
+.login-card {
+    background: #ffffff;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 380px;
+    padding: 28px 24px;
+    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+.login-icon {
+    font-size: 2.4rem;
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.login-header h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #1e3a8a;
+    margin-bottom: 4px;
+}
+
+.login-header p {
+    font-size: 0.82rem;
+    color: var(--text-sub);
+    margin-bottom: 20px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    text-align: left;
+}
+
+.login-form label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.login-form input {
+    height: 44px;
+    font-size: 1rem;
+}
+
+.btn-login {
+    background: var(--primary-color);
+    color: #ffffff;
+    border: none;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: 800;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    margin-top: 6px;
+    box-shadow: 0 4px 10px rgba(30, 64, 175, 0.3);
+}
+
+.btn-login:hover {
+    background: var(--primary-hover);
+}
+
+.login-error {
+    color: var(--danger-color);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-align: center;
+    min-height: 18px;
+}
+
 /* Header & Navigation */
 .top-header {
     background: #ffffff;
@@ -48,45 +138,51 @@ body {
 .header-container {
     max-width: 1280px;
     margin: 0 auto;
-    padding: 14px 20px;
+    padding: 12px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 14px;
+    gap: 12px;
 }
 
 .brand {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }
 
 .logo-icon {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     background: #eff6ff;
     border: 1px solid #bfdbfe;
-    border-radius: 10px;
-    padding: 6px 10px;
+    border-radius: 8px;
+    padding: 4px 8px;
 }
 
 .brand-text h1 {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: 800;
     color: #1e3a8a;
     letter-spacing: -0.5px;
 }
 
 .sub-title {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--text-sub);
     font-weight: 500;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .view-mode-toggle {
     display: flex;
     background: #f1f5f9;
-    padding: 4px;
+    padding: 3px;
     border-radius: var(--radius-md);
     border: 1px solid #cbd5e1;
 }
@@ -95,21 +191,36 @@ body {
     background: transparent;
     border: none;
     color: var(--text-sub);
-    padding: 8px 16px;
-    font-size: 0.9rem;
-    font-weight: 600;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .mode-btn.active {
     background: var(--primary-color);
     color: #ffffff;
     box-shadow: 0 2px 6px rgba(30, 64, 175, 0.3);
+}
+
+.btn-logout {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: var(--text-sub);
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.btn-logout:hover {
+    background: #f8fafc;
+    color: var(--danger-color);
 }
 
 /* Building Tab Bar */
@@ -119,21 +230,12 @@ body {
     background: #ffffff;
 }
 
-.building-tabs-scroll::-webkit-scrollbar {
-    height: 4px;
-}
-
-.building-tabs-scroll::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-}
-
 .building-tabs {
     display: flex;
     max-width: 1280px;
     margin: 0 auto;
-    padding: 8px 16px;
-    gap: 8px;
+    padding: 6px 12px;
+    gap: 6px;
     white-space: nowrap;
 }
 
@@ -141,31 +243,24 @@ body {
     background: #f8fafc;
     border: 1px solid #cbd5e1;
     color: var(--text-sub);
-    padding: 10px 20px;
-    font-size: 0.95rem;
+    padding: 8px 16px;
+    font-size: 0.9rem;
     font-weight: 700;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.tab-btn:hover {
-    color: var(--primary-color);
-    border-color: var(--primary-color);
 }
 
 .tab-btn.active {
     background: var(--primary-color);
     color: #ffffff;
     border-color: var(--primary-color);
-    box-shadow: 0 2px 6px rgba(30, 64, 175, 0.25);
 }
 
 /* Main Content */
 .main-content {
     max-width: 1280px;
     margin: 0 auto;
-    padding: 20px 16px;
+    padding: 14px 12px;
     width: 100%;
     flex: 1;
 }
@@ -178,53 +273,43 @@ body {
     display: block;
 }
 
-/* Cards */
+/* Cards & High-Density Form */
 .meta-card, .notes-card, .dashboard-card {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     border-radius: var(--radius-md);
-    padding: 20px;
-    margin-bottom: 20px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
     box-shadow: var(--shadow-card);
 }
 
 .meta-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
     align-items: flex-end;
 }
 
 .meta-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
 }
 
 .btn-copy-prev {
     background: #0284c7;
     color: #ffffff;
     border: none;
-    padding: 12px 16px;
-    font-size: 0.95rem;
+    padding: 10px 14px;
+    font-size: 0.88rem;
     font-weight: 700;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
-    height: 44px;
-    transition: background 0.15s ease;
-}
-
-.btn-copy-prev:hover {
-    background: #0369a1;
+    height: 40px;
 }
 
 label {
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     font-weight: 700;
     color: var(--text-main);
 }
@@ -238,19 +323,14 @@ textarea {
     background: var(--input-bg);
     border: 1.5px solid var(--input-border);
     color: var(--text-main);
-    padding: 10px 14px;
-    font-size: 1rem;
+    padding: 8px 12px;
+    font-size: 0.95rem;
     font-weight: 600;
     border-radius: var(--radius-sm);
     outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s, color 0.2s;
 }
 
-input:focus, select:focus, textarea:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.15);
-}
-
+/* Value States */
 input.is-previous-value, select.is-previous-value {
     color: #94a3b8 !important;
     font-style: italic !important;
@@ -265,173 +345,124 @@ input.is-modified-value, select.is-modified-value {
     background: #ffffff;
 }
 
-/* Global Date Filter Bar */
-.global-filter-row {
-    display: flex;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 180px;
-}
-
-.filter-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-left: auto;
-}
-
-.btn-reset {
-    background: #f1f5f9;
-    border: 1px solid #cbd5e1;
-    color: #475569;
-    padding: 10px 16px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    height: 42px;
-    transition: background 0.15s ease;
-}
-
-.btn-reset:hover {
-    background: #e2e8f0;
-    color: #0f172a;
-}
-
-.btn-excel-export {
-    background: #166534;
-    color: #ffffff;
-    border: none;
-    padding: 10px 18px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 42px;
-    box-shadow: 0 2px 6px rgba(22, 101, 52, 0.25);
-    transition: background 0.15s ease;
-}
-
-.btn-excel-export:hover {
-    background: #15803d;
-}
-
-/* Traditional Excel Spreadsheet Log Paper Layout */
+/* High Density Compact Form Table Layout */
 .excel-paper-wrapper {
     background: #ffffff;
     border: 1px solid #cbd5e1;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-card);
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     overflow: hidden;
 }
 
 .excel-section-banner {
     background: #e2e8f0;
     color: #1e3a8a;
-    font-size: 1.05rem;
+    font-size: 0.98rem;
     font-weight: 800;
-    padding: 12px 18px;
+    padding: 10px 14px;
     border-bottom: 2px solid #cbd5e1;
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
 }
 
 .excel-form-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
 }
 
 .excel-form-table th {
     background: #f8fafc;
     color: #334155;
     font-weight: 700;
-    padding: 12px 16px;
+    padding: 10px 12px;
     border-bottom: 2px solid #cbd5e1;
     border-right: 1px solid #e2e8f0;
     text-align: left;
 }
 
-.excel-form-table th:last-child {
-    border-right: none;
-}
-
 .excel-form-table td {
-    padding: 10px 14px;
+    padding: 8px 12px;
     border-bottom: 1px solid #e2e8f0;
     border-right: 1px solid #e2e8f0;
     vertical-align: middle;
-}
-
-.excel-form-table td:last-child {
-    border-right: none;
 }
 
 .excel-form-table tr:hover {
     background: #f8fafc;
 }
 
-.excel-form-table tr.warning-out-range {
-    background: #fef2f2;
+/* Locked / Standby Inactive Field Styling */
+.excel-form-table tr.is-standby-locked {
+    background: #f1f5f9 !important;
+    opacity: 0.65;
+}
+
+.excel-form-table tr.is-standby-locked input {
+    background: #e2e8f0 !important;
+    color: #94a3b8 !important;
+    cursor: not-allowed;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+.status-active {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #86efac;
+}
+
+.status-locked {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
 }
 
 .item-title {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-main);
 }
 
 .unit-badge {
     color: #64748b;
-    font-size: 0.88rem;
-    font-weight: 500;
+    font-size: 0.85rem;
+    font-weight: 600;
 }
 
 .range-badge {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 12px;
+    padding: 3px 8px;
+    border-radius: 10px;
     background: #f1f5f9;
     color: #475569;
     border: 1px solid #cbd5e1;
     display: inline-block;
 }
 
-.badge-out-range {
-    background: #fee2e2;
-    color: #991b1b;
-    border-color: #fca5a5;
-}
-
-/* Touch Friendly Input Stepper Controls */
 .input-stepper-wrapper {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     width: 100%;
-    max-width: 280px;
 }
 
 .stepper-btn {
     background: #f1f5f9;
     border: 1px solid #cbd5e1;
     color: #1e293b;
-    width: 44px;
-    height: 44px;
+    width: 38px;
+    height: 38px;
     border-radius: var(--radius-sm);
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     font-weight: 800;
     display: flex;
     align-items: center;
@@ -441,11 +472,6 @@ input.is-modified-value, select.is-modified-value {
     touch-action: manipulation;
 }
 
-.stepper-btn:active {
-    background: var(--primary-color);
-    color: #ffffff;
-}
-
 .stepper-input-container {
     flex: 1;
     position: relative;
@@ -453,11 +479,11 @@ input.is-modified-value, select.is-modified-value {
 
 .unit-suffix {
     position: absolute;
-    right: 10px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
     color: #64748b;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 600;
     pointer-events: none;
 }
@@ -465,9 +491,9 @@ input.is-modified-value, select.is-modified-value {
 /* Submit Bar */
 .submit-bar {
     position: sticky;
-    bottom: 16px;
+    bottom: 14px;
     z-index: 90;
-    margin-top: 24px;
+    margin-top: 18px;
 }
 
 .btn-submit {
@@ -475,8 +501,8 @@ input.is-modified-value, select.is-modified-value {
     background: var(--primary-color);
     color: #ffffff;
     border: none;
-    padding: 16px;
-    font-size: 1.1rem;
+    padding: 14px;
+    font-size: 1.05rem;
     font-weight: 800;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -487,41 +513,75 @@ input.is-modified-value, select.is-modified-value {
     gap: 8px;
 }
 
-.btn-submit:hover {
-    background: var(--primary-hover);
-}
-
-/* Dashboard & Trend Section */
+/* Dashboard & Table */
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
     border-bottom: 2px solid #e2e8f0;
 }
 
 .card-header h2 {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 800;
     color: #1e3a8a;
 }
 
-.chart-controls, .table-controls {
+.global-filter-row {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 150px;
+}
+
+.filter-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.btn-reset {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    height: 38px;
+}
+
+.btn-excel-export {
+    background: #166534;
+    color: #ffffff;
+    border: none;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    height: 38px;
 }
 
 .chart-wrapper {
     position: relative;
     width: 100%;
-    height: 380px;
+    height: 340px;
 }
 
-/* Table */
 .table-responsive {
     overflow-x: auto;
 }
@@ -530,11 +590,11 @@ input.is-modified-value, select.is-modified-value {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
-    font-size: 0.92rem;
+    font-size: 0.88rem;
 }
 
 .history-table th, .history-table td {
-    padding: 12px 16px;
+    padding: 10px 12px;
     border-bottom: 1px solid #e2e8f0;
 }
 
@@ -544,20 +604,15 @@ input.is-modified-value, select.is-modified-value {
     font-weight: 700;
 }
 
-.history-table tbody tr:hover {
-    background: #f1f5f9;
-}
-
 .btn-action {
     background: #ffffff;
     border: 1px solid #cbd5e1;
     color: var(--text-main);
-    padding: 6px 12px;
-    font-size: 0.8rem;
+    padding: 5px 10px;
+    font-size: 0.78rem;
     font-weight: 600;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
-    margin-right: 4px;
 }
 
 .btn-action.btn-del {
@@ -566,7 +621,7 @@ input.is-modified-value, select.is-modified-value {
     background: #fff5f5;
 }
 
-/* Modal */
+/* Modal & Toast */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -592,11 +647,10 @@ input.is-modified-value, select.is-modified-value {
     max-height: 85vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 .modal-header {
-    padding: 16px 20px;
+    padding: 14px 18px;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
@@ -607,43 +661,40 @@ input.is-modified-value, select.is-modified-value {
     background: none;
     border: none;
     color: #64748b;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     cursor: pointer;
 }
 
 .modal-body {
-    padding: 20px;
+    padding: 16px;
     overflow-y: auto;
     flex: 1;
 }
 
 .modal-footer {
-    padding: 14px 20px;
+    padding: 12px 18px;
     border-top: 1px solid #e2e8f0;
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
 }
 
 .btn-secondary {
     background: #f1f5f9;
     border: 1px solid #cbd5e1;
     color: var(--text-main);
-    padding: 10px 18px;
+    padding: 8px 16px;
     border-radius: var(--radius-sm);
     font-weight: 600;
-    cursor: pointer;
 }
 
-/* Toast */
 .toast {
     position: fixed;
-    bottom: 30px;
+    bottom: 24px;
     left: 50%;
     transform: translateX(-50%) translateY(100px);
     background: #1e3a8a;
     color: white;
-    padding: 12px 24px;
+    padding: 10px 20px;
     border-radius: 30px;
     font-weight: 700;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
@@ -655,23 +706,27 @@ input.is-modified-value, select.is-modified-value {
     transform: translateX(-50%) translateY(0);
 }
 
-/* Mobile Portrait Layout Optimization (< 640px) */
+/* 📱 Mobile High Density Compact Layout (< 640px) */
 @media (max-width: 640px) {
     .header-container {
         flex-direction: column;
         align-items: flex-start;
-        padding: 10px 14px;
+        padding: 8px 12px;
+    }
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
     }
     .view-mode-toggle {
-        width: 100%;
+        flex: 1;
     }
     .mode-btn {
         flex: 1;
         justify-content: center;
-        padding: 10px;
+        padding: 8px;
     }
     .main-content {
-        padding: 12px 8px;
+        padding: 10px 6px;
     }
     .global-filter-row {
         flex-direction: column;
@@ -687,6 +742,7 @@ input.is-modified-value, select.is-modified-value {
         justify-content: center;
     }
     
+    /* Compact Card Layout for Mobile Screens */
     .excel-form-table, .excel-form-table tbody, .excel-form-table tr, .excel-form-table td {
         display: block;
         width: 100%;
@@ -696,7 +752,7 @@ input.is-modified-value, select.is-modified-value {
     }
     .excel-form-table tr {
         border-bottom: 1px solid #cbd5e1;
-        padding: 12px 14px;
+        padding: 8px 10px;
         background: #ffffff;
     }
     .excel-form-table tr:nth-child(even) {
@@ -704,39 +760,39 @@ input.is-modified-value, select.is-modified-value {
     }
     .excel-form-table td {
         border: none !important;
-        padding: 4px 0;
+        padding: 2px 0;
     }
     
     .excel-form-table td:nth-child(1) {
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 700;
         color: #1e3a8a;
-        margin-bottom: 4px;
     }
     .excel-form-table td:nth-child(2) {
         display: inline-block;
-        margin-right: 8px;
+        margin-right: 6px;
     }
     .excel-form-table td:nth-child(3) {
         display: inline-block;
-        margin-bottom: 8px;
+        margin-bottom: 4px;
     }
     .excel-form-table td:nth-child(4) {
-        margin-top: 6px;
+        margin-top: 4px;
     }
     
     .input-stepper-wrapper {
-        max-width: 100%;
+        width: 100%;
     }
     
     .stepper-btn {
-        width: 48px;
-        height: 48px;
-        font-size: 1.5rem;
+        width: 44px;
+        height: 44px;
+        font-size: 1.3rem;
     }
     
     input[type="number"] {
-        height: 48px;
-        font-size: 1.15rem;
+        height: 44px;
+        font-size: 1.1rem;
+        font-weight: 700;
     }
 }

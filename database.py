@@ -1,6 +1,7 @@
 import sqlite3
 import json
 import os
+import uuid
 from datetime import datetime
 
 DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "ro_inspection.db"))
@@ -8,7 +9,6 @@ DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "ro_inspection
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    # Enable WAL mode for crash safety & concurrency
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA synchronous=NORMAL;")
     return conn
@@ -17,7 +17,7 @@ def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Inspection logs table
+    # Table for inspection logs
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS inspection_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,9 +31,40 @@ def init_db():
     )
     ''')
     
+    # Table for active user sessions
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS user_sessions (
+        token TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )
+    ''')
+    
     conn.commit()
     conn.close()
 
+# Session Management
+def create_session(user_id: str = "1234") -> str:
+    token = str(uuid.uuid4())
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    created_at = datetime.now().isoformat()
+    cursor.execute("INSERT INTO user_sessions (token, user_id, created_at) VALUES (?, ?, ?)", (token, user_id, created_at))
+    conn.commit()
+    conn.close()
+    return token
+
+def verify_session(token: str) -> bool:
+    if not token:
+        return False
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM user_sessions WHERE token = ?", (token,))
+    row = cursor.fetchone()
+    conn.close()
+    return row is not None
+
+# CRUD Functions
 def create_log(building_code: str, line_code: str, inspection_date: str, inspector: str, values: dict, notes: str = ""):
     conn = get_db_connection()
     cursor = conn.cursor()

@@ -2,7 +2,7 @@ import os
 import io
 import csv
 from typing import Dict, Any, Optional, List
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Header
 from fastapi.responses import StreamingResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,7 +11,7 @@ from pydantic import BaseModel
 import database
 import seed_sample_data
 
-app = FastAPI(title="RO 순수 점검일지 시스템 API", version="1.3.0")
+app = FastAPI(title="RO/EDI 점검일지 통합 관리 API", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,171 +26,9 @@ def startup_event():
     database.init_db()
     seed_sample_data.seed()
 
-BUILDING_SCHEMAS = {
-    "2METAL": {
-        "name": "2메탈동",
-        "has_lines": False,
-        "lines": [],
-        "sections": [
-            {
-                "title": "용수 카본",
-                "fields": [
-                    {"key": "carbon_inlet_press", "label": "1. 용수 Carbon Filter Inlet Pressure", "unit": "kg/cm²", "range": "1.5 ~ 4.0", "min": 0, "max": 10},
-                    {"key": "carbon_outlet_press", "label": "2. 용수 Carbon Filter Outlet Pressure", "unit": "kg/cm²", "range": "1.0 ~ 3.5", "min": 0, "max": 10}
-                ]
-            },
-            {
-                "title": "R/O 구분 및 제원",
-                "fields": [
-                    {"key": "ro_status", "label": "R/O 운전 상태", "type": "select", "options": ["A운전", "B운전", "A+B 동시운전", "전체정지"], "unit": "", "range": "-"},
-                    {"key": "ro_feed_pump_press", "label": "1. R/O Feed Pump Pressure", "unit": "kg/cm²", "range": "2.0 ~ 3.5", "min": 0, "max": 10},
-                    {"key": "safety_inlet_press", "label": "2. R/O Safety Filter Inlet Pressure", "unit": "kg/cm²", "range": "1.2 ~ 2.5", "min": 0, "max": 10},
-                    {"key": "safety_outlet_press", "label": "3. R/O Safety Filter Outlet Pressure", "unit": "kg/cm²", "range": "0.7 ~ 1.8", "min": 0, "max": 10},
-                    {"key": "inlet_cond", "label": "4. R/O Inlet Conductivity", "unit": "uS/cm", "range": "20.0 ~ 50.0", "min": 0, "max": 200},
-                    {"key": "outlet_cond", "label": "5. R/O Outlet Conductivity", "unit": "uS/cm", "range": "0 ~ 10.0", "min": 0, "max": 50},
-                    {"key": "feed_flow", "label": "6. R/O Feed 수량", "unit": "m³/hr", "range": "50.0 ~ 70.0", "min": 0, "max": 150},
-                    {"key": "prod_flow", "label": "7. R/O 생산수량", "unit": "m³/hr", "range": "45.0 ~ 60.0", "min": 0, "max": 150},
-                    {"key": "brine_flow", "label": "8. R/O 농축수량", "unit": "m³/hr", "range": "8.0 ~ 15.0", "min": 0, "max": 50},
-                    {"key": "recovery_rate", "label": "9. 회수율", "unit": "%", "range": "75.0 ~ 85.0", "min": 0, "max": 100, "auto_calc": "prod_flow / feed_flow * 100"},
-                    {"key": "hp_pump_press", "label": "10. R/O High Pressure Pump Pressure", "unit": "kg/cm²", "range": "8.5 ~ 12.0", "min": 0, "max": 25},
-                    {"key": "ro_feed_press", "label": "11. R/O Feed Pressure", "unit": "kg/cm²", "range": "6.5 ~ 8.0", "min": 0, "max": 15},
-                    {"key": "ro_prod_press", "label": "12. R/O Product Pressure", "unit": "kg/cm²", "range": "0.5 ~ 3.0", "min": 0, "max": 10},
-                    {"key": "ro_brine_1st_press", "label": "13. R/O 1'st Brine Pressure", "unit": "kg/cm²", "range": "4.5 ~ 7.0", "min": 0, "max": 15},
-                    {"key": "ro_brine_press", "label": "14. R/O Brine Pressure", "unit": "kg/cm²", "range": "2.0 ~ 6.5", "min": 0, "max": 15},
-                    {"key": "diff_press", "label": "15. D/P 차압", "unit": "kg/cm²", "range": "1.0 ~ 3.5", "min": 0, "max": 10, "auto_calc": "ro_feed_press - ro_brine_press"},
-                    {"key": "feed_temp", "label": "16. R/O Feed Water Temperature", "unit": "°C", "range": "20.0 ~ 32.0", "min": 0, "max": 50}
-                ]
-            },
-            {
-                "title": "1F, 2메탈, 3F 필터",
-                "fields": [
-                    {"key": "tw_1f_inlet_press", "label": "1. TW 1-F Filter Inlet Pressure", "unit": "kg/cm²", "range": "4.0 ~ 6.5", "min": 0, "max": 10},
-                    {"key": "tw_1f_outlet_press", "label": "2. TW 1-F Filter Outlet Pressure", "unit": "kg/cm²", "range": "4.0 ~ 6.5", "min": 0, "max": 10},
-                    {"key": "metal_2_inlet_press", "label": "3. 2-Metal Filter Inlet Pressure", "unit": "kg/cm²", "range": "2.5 ~ 6.0", "min": 0, "max": 10},
-                    {"key": "metal_2_outlet_press", "label": "4. 2-Metal Filter Outlet Pressure", "unit": "kg/cm²", "range": "4.0 ~ 6.0", "min": 0, "max": 10},
-                    {"key": "tw_3f_inlet_press", "label": "5. TW 3-F Filter Inlet Pressure", "unit": "kg/cm²", "range": "4.5 ~ 6.0", "min": 0, "max": 10},
-                    {"key": "tw_3f_outlet_press", "label": "6. TW 3-F Filter Outlet Pressure", "unit": "kg/cm²", "range": "1.5 ~ 6.0", "min": 0, "max": 10}
-                ]
-            }
-        ]
-    },
-    "B_DONG": {
-        "name": "B동",
-        "has_lines": False,
-        "lines": [],
-        "sections": [
-            {
-                "title": "B동 RO 점검 항목",
-                "fields": [
-                    {"key": "pre_feed_pump_press", "label": "전처리 FEED PUMP 압력", "unit": "Kg/Cm²", "range": "1.0 ~ 7.0", "min": 0, "max": 15},
-                    {"key": "ro_feed_pump_press", "label": "1차 R/O FEED PUMP 압력", "unit": "Kg/Cm²", "range": "3.0 ~ 4.0", "min": 0, "max": 10},
-                    {"key": "ro_hp_pump_press", "label": "1차 R/O 고압 펌프 압력", "unit": "Kg/Cm²", "range": "10.0 ~ 14.0", "min": 0, "max": 20},
-                    {"key": "ro_feed_press", "label": "1차 RO FEED 압력", "unit": "Kg/Cm²", "range": "4.5 ~ 6.5", "min": 0, "max": 10},
-                    {"key": "ro_1st_brine_press", "label": "1차 RO 1st 농축수 압력", "unit": "Kg/Cm²", "range": "3.5 ~ 5.0", "min": 0, "max": 10},
-                    {"key": "ro_2nd_brine_press", "label": "1차 RO 2nd 농축수 압력", "unit": "Kg/Cm²", "range": "2.0 ~ 3.2", "min": 0, "max": 10},
-                    {"key": "ro_diff_press", "label": "1차 RO UNIT 차압", "unit": "Kg/Cm²", "range": "0 ~ 5.0", "min": 0, "max": 10},
-                    {"key": "ro_prod_press", "label": "1차 RO 생산수 압력", "unit": "Kg/Cm²", "range": "0 ~ 1.0", "min": 0, "max": 5},
-                    {"key": "ro_prod_flow", "label": "1차 RO 생산수 유량", "unit": "m³/hr", "range": "30 ~ 60", "min": 0, "max": 100},
-                    {"key": "ro_brine_flow", "label": "1차 RO 농축수 유량", "unit": "m³/hr", "range": "15 ~ 155", "min": 0, "max": 200},
-                    {"key": "ro_prod_cond", "label": "1차 RO 생산수 전도도", "unit": "uS/cm", "range": "0 ~ 10.0", "min": 0, "max": 50},
-                    {"key": "ro_feed_temp", "label": "1차 R/O Feed Temperature", "unit": "°C", "range": "23 ~ 25", "min": 0, "max": 50}
-                ]
-            }
-        ]
-    },
-    "C_DONG_1": {
-        "name": "C동 1차",
-        "has_lines": False,
-        "lines": [],
-        "sections": [
-            {
-                "title": "C동 1차 RO 점검 항목",
-                "fields": [
-                    {"key": "ro_feed_pump_press", "label": "1. R/O Feed Pump Pressure", "unit": "kg/cm²", "range": "4.5 ~ 6.0", "min": 0, "max": 10},
-                    {"key": "safety_inlet_press", "label": "2. Safety Filter Inlet Pressure", "unit": "kg/cm²", "range": "1.5 ~ 2.5", "min": 0, "max": 10},
-                    {"key": "safety_outlet_press", "label": "3. Safety Filter Outlet Pressure", "unit": "kg/cm²", "range": "1.4 ~ 2.2", "min": 0, "max": 10},
-                    {"key": "inlet_cond", "label": "4. R/O Inlet Conductivity", "unit": "uS/cm", "range": "45.0 ~ 70.0", "min": 0, "max": 200},
-                    {"key": "outlet_cond", "label": "5. R/O Outlet Conductivity", "unit": "uS/cm", "range": "8.0 ~ 12.0", "min": 0, "max": 50},
-                    {"key": "prod_flow", "label": "6. R/O 생산수량", "unit": "m³/hr", "range": "30.0 ~ 40.0", "min": 0, "max": 100}
-                ]
-            }
-        ]
-    },
-    "C_DONG_2": {
-        "name": "C동 2차",
-        "has_lines": False,
-        "lines": [],
-        "sections": [
-            {
-                "title": "C동 2차 RO 점검 항목",
-                "fields": [
-                    {"key": "raw_feed_pump_press", "label": "1. Raw Water Feed Pump Pressure", "unit": "kg/cm²", "range": "2.0 ~ 3.5", "min": 0, "max": 10},
-                    {"key": "mf_inlet_temp", "label": "2. M/F Inlet Temperature", "unit": "°C", "range": "20.0 ~ 30.0", "min": 0, "max": 50},
-                    {"key": "mf_inlet_press", "label": "3. M/F Inlet Pressure", "unit": "kg/cm²", "range": "1.0 ~ 2.0", "min": 0, "max": 10},
-                    {"key": "ro_feed_pump_press", "label": "4. R/O Feed Pump Pressure", "unit": "kg/cm²", "range": "2.0 ~ 3.0", "min": 0, "max": 10},
-                    {"key": "safety_inlet_press", "label": "5. Safety Filter Inlet Pressure", "unit": "kg/cm²", "range": "1.5 ~ 2.2", "min": 0, "max": 10},
-                    {"key": "safety_outlet_press", "label": "6. Safety Filter Outlet Pressure", "unit": "kg/cm²", "range": "1.0 ~ 2.2", "min": 0, "max": 10}
-                ]
-            }
-        ]
-    },
-    "E_DONG": {
-        "name": "E동",
-        "has_lines": True,
-        "lines": ["RO_A", "RO_B", "RO_C"],
-        "sections": [
-            {
-                "title": "E동 RO 점검 항목",
-                "fields": [
-                    {"key": "feed_pump_press", "label": "R/O FEED PUMP 압력", "unit": "Kg/Cm²", "range": "3.0 ~ 6.0", "min": 0, "max": 10},
-                    {"key": "hp_pump_press", "label": "1차 R/O 고압 펌프 압력", "unit": "Kg/Cm²", "range": "10.0 ~ 13.0", "min": 0, "max": 20},
-                    {"key": "feed_press", "label": "1차 RO FEED 압력", "unit": "Kg/Cm²", "range": "7.0 ~ 9.5", "min": 0, "max": 15},
-                    {"key": "brine_1st_press", "label": "1차 RO 1st 농축수 압력", "unit": "Kg/Cm²", "range": "5.0 ~ 10.0", "min": 0, "max": 15},
-                    {"key": "brine_2nd_press", "label": "1차 RO 2nd 농축수 압력", "unit": "Kg/Cm²", "range": "4.5 ~ 6.5", "min": 0, "max": 15},
-                    {"key": "unit_diff_press", "label": "1차 RO UNIT 차압", "unit": "Kg/Cm²", "range": "0 ~ 5.0", "min": 0, "max": 10},
-                    {"key": "prod_press", "label": "1차 RO 생산수 압력", "unit": "Kg/Cm²", "range": "0 ~ 3.0", "min": 0, "max": 5},
-                    {"key": "prod_flow", "label": "1차 RO 생산수 유량", "unit": "m³/hr", "range": "50 ~ 70", "min": 0, "max": 120}
-                ]
-            }
-        ]
-    },
-    "PS_1_2F": {
-        "name": "PS 1.2F",
-        "has_lines": True,
-        "lines": ["RO_A", "RO_B", "RO_C", "RO_D"],
-        "sections": [
-            {
-                "title": "PS 1~2층 RO 점검 항목",
-                "fields": [
-                    {"key": "feed_pump_press", "label": "R/O FEED PUMP 압력", "unit": "Kg/Cm²", "range": "3.5 ~ 12.5", "min": 0, "max": 20},
-                    {"key": "inlet_flow", "label": "1차 R/O 인입 유량", "unit": "m³/hr", "range": "30 ~ 65", "min": 0, "max": 120},
-                    {"key": "hp_pump_press", "label": "1차 R/O 고압 펌프 압력", "unit": "Kg/Cm²", "range": "11.0 ~ 18.0", "min": 0, "max": 25},
-                    {"key": "feed_press", "label": "1차 RO FEED 압력", "unit": "Kg/Cm²", "range": "6.5 ~ 8.5", "min": 0, "max": 15},
-                    {"key": "brine_1st_press", "label": "1차 RO 1st 농축수 압력", "unit": "Kg/Cm²", "range": "5.0 ~ 6.5", "min": 0, "max": 15},
-                    {"key": "brine_2nd_press", "label": "1차 RO 2nd 농축수 압력", "unit": "Kg/Cm²", "range": "4.0 ~ 6.0", "min": 0, "max": 15}
-                ]
-            }
-        ]
-    },
-    "PS_3F": {
-        "name": "PS 3F",
-        "has_lines": False,
-        "lines": [],
-        "sections": [
-            {
-                "title": "PS 3층 RO 점검 항목",
-                "fields": [
-                    {"key": "supply_press", "label": "R/O 공급 압력", "unit": "Kg/Cm²", "range": "3.0 ~ 5.0", "min": 0, "max": 10},
-                    {"key": "inlet_flow", "label": "1차 R/O 인입수 유량", "unit": "m³/hr", "range": "30 ~ 75", "min": 0, "max": 120},
-                    {"key": "hp_pump_press", "label": "1차 R/O 고압 펌프 압력", "unit": "Kg/Cm²", "range": "13.0 ~ 18.0", "min": 0, "max": 25},
-                    {"key": "feed_press", "label": "1차 RO FEED 압력", "unit": "Kg/Cm²", "range": "7.0 ~ 9.0", "min": 0, "max": 15},
-                    {"key": "brine_1st_press", "label": "1차 RO 1st 농축수 압력", "unit": "Kg/Cm²", "range": "5.5 ~ 7.0", "min": 0, "max": 15},
-                    {"key": "brine_2nd_press", "label": "1차 RO 2nd 농축수 압력", "unit": "Kg/Cm²", "range": "4.5 ~ 6.0", "min": 0, "max": 15}
-                ]
-            }
-        ]
-    }
-}
+class LoginRequest(BaseModel):
+    user_id: str
+    password: str
 
 class InspectionLogCreate(BaseModel):
     building_code: str
@@ -199,6 +37,327 @@ class InspectionLogCreate(BaseModel):
     inspector: str
     values: Dict[str, Any]
     notes: Optional[str] = ""
+
+# Building Schemas matching ROEDI점검일지 (B동,C동,D동,E동).xls
+BUILDING_SCHEMAS = {
+    "B_DONG": {
+        "name": "B동",
+        "sections": [
+            {
+                "title": "전처리 FEED PUMP",
+                "fields": [
+                    {"key": "pre_feed_pump_press", "label": "전처리 FEED PUMP 압력", "unit": "Kg/Cm²", "range": "3~6"},
+                    {"key": "pre_feed_pump_flow_a", "label": "전처리 FEED PUMP A 유량", "unit": "m³/hr", "range": "30~80", "group": "pre_pump", "sub": "A"},
+                    {"key": "pre_feed_pump_flow_b", "label": "전처리 FEED PUMP B 유량", "unit": "m³/hr", "range": "30~80", "group": "pre_pump", "sub": "B"}
+                ]
+            },
+            {
+                "title": "1차 R/O",
+                "fields": [
+                    {"key": "ro_1st_feed_pump_press_a", "label": "R/O FEED PUMP A 압력", "unit": "Kg/Cm²", "range": "3~5", "group": "ro1_feed_pump", "sub": "A"},
+                    {"key": "ro_1st_feed_pump_press_b", "label": "R/O FEED PUMP B 압력", "unit": "Kg/Cm²", "range": "3~5", "group": "ro1_feed_pump", "sub": "B"},
+                    {"key": "ro_1st_feed_pump_press_c", "label": "R/O FEED PUMP C 압력", "unit": "Kg/Cm²", "range": "3~5", "group": "ro1_feed_pump", "sub": "C"},
+                    
+                    {"key": "ro_1st_hp_pump_press_a", "label": "1차 R/O고압 펌프 A 압력", "unit": "Kg/Cm²", "range": "7~15", "group": "ro1_hp_pump", "sub": "A"},
+                    {"key": "ro_1st_hp_pump_press_b", "label": "1차 R/O고압 펌프 B 압력", "unit": "Kg/Cm²", "range": "7~15", "group": "ro1_hp_pump", "sub": "B"},
+                    {"key": "ro_1st_hp_pump_press_c", "label": "1차 R/O고압 펌프 C 압력", "unit": "Kg/Cm²", "range": "7~15", "group": "ro1_hp_pump", "sub": "C"},
+                    
+                    {"key": "ro_1st_feed_press_a", "label": "1차 RO FEED A 압력", "unit": "Kg/Cm²", "range": "7~15", "group": "ro1_line", "sub": "A"},
+                    {"key": "ro_1st_feed_press_b", "label": "1차 RO FEED B 압력", "unit": "Kg/Cm²", "range": "7~15", "group": "ro1_line", "sub": "B"},
+                    
+                    {"key": "ro_1st_brine_1st_press_a", "label": "1차 RO 1st 농축수 A 압력", "unit": "Kg/Cm²", "range": "7~15", "group": "ro1_line", "sub": "A"},
+                    {"key": "ro_1st_brine_1st_press_b", "label": "1차 RO 1st 농축수 B 압력", "unit": "Kg/Cm²", "range": "7~15", "group": "ro1_line", "sub": "B"},
+                    
+                    {"key": "ro_1st_brine_2nd_press_a", "label": "1차 RO 2nd 농축수 A 압력", "unit": "Kg/Cm²", "range": "7~15", "group": "ro1_line", "sub": "A"},
+                    {"key": "ro_1st_brine_2nd_press_b", "label": "1차 RO 2nd 농축수 B 압력", "unit": "Kg/Cm²", "range": "7~15", "group": "ro1_line", "sub": "B"},
+                    
+                    {"key": "ro_1st_unit_diff_press_a", "label": "1차 RO UNIT 차압 A", "unit": "Kg/Cm²", "range": "0~5", "group": "ro1_line", "sub": "A"},
+                    {"key": "ro_1st_unit_diff_press_b", "label": "1차 RO UNIT 차압 B", "unit": "Kg/Cm²", "range": "0~5", "group": "ro1_line", "sub": "B"},
+                    
+                    {"key": "ro_1st_prod_press_a", "label": "1차 RO 생산수 A 압력", "unit": "Kg/Cm²", "range": "0~1", "group": "ro1_line", "sub": "A"},
+                    {"key": "ro_1st_prod_press_b", "label": "1차 RO 생산수 B 압력", "unit": "Kg/Cm²", "range": "0~1", "group": "ro1_line", "sub": "B"},
+                    
+                    {"key": "ro_1st_prod_flow_a", "label": "1차 RO 생산수 유량 A", "unit": "m³/hr", "range": "30~60", "group": "ro1_line", "sub": "A"},
+                    {"key": "ro_1st_prod_flow_b", "label": "1차 RO 생산수 유량 B", "unit": "m³/hr", "range": "30~60", "group": "ro1_line", "sub": "B"},
+                    
+                    {"key": "ro_1st_brine_flow_a", "label": "1차 RO 농축수 유량 A", "unit": "m³/hr", "range": "15~155", "group": "ro1_line", "sub": "A"},
+                    {"key": "ro_1st_brine_flow_b", "label": "1차 RO 농축수 유량 B", "unit": "m³/hr", "range": "15~155", "group": "ro1_line", "sub": "B"},
+                    
+                    {"key": "ro_1st_prod_cond_a", "label": "1차 RO 생산수 전도도 A", "unit": "uS/cm", "range": "10이하", "group": "ro1_line", "sub": "A"},
+                    {"key": "ro_1st_prod_cond_b", "label": "1차 RO 생산수 전도도 B", "unit": "uS/cm", "range": "10이하", "group": "ro1_line", "sub": "B"},
+                    
+                    {"key": "ro_1st_feed_temp_a", "label": "1차 R/O Feed Temperature A", "unit": "°C", "range": "23~25", "group": "ro1_line", "sub": "A"},
+                    {"key": "ro_1st_feed_temp_b", "label": "1차 R/O Feed Temperature B", "unit": "°C", "range": "23~25", "group": "ro1_line", "sub": "B"}
+                ]
+            },
+            {
+                "title": "2차 R/O",
+                "fields": [
+                    {"key": "ro_2nd_hp_pump_press_a", "label": "2차 R/O 고압 펌프 A 압력", "unit": "Kg/Cm²", "range": "7~12", "group": "ro2_hp_pump", "sub": "A"},
+                    {"key": "ro_2nd_hp_pump_press_b", "label": "2차 R/O 고압 펌프 B 압력", "unit": "Kg/Cm²", "range": "7~12", "group": "ro2_hp_pump", "sub": "B"},
+                    {"key": "ro_2nd_feed_press", "label": "2차 R/O FEED 압력", "unit": "Kg/Cm²", "range": "7~12"},
+                    {"key": "ro_2nd_brine_1st_press", "label": "2차 R/O 1st 농축수 압력", "unit": "Kg/Cm²", "range": "7~12"},
+                    {"key": "ro_2nd_brine_2nd_press", "label": "2차 R/O 2nd 농축수 압력", "unit": "Kg/Cm²", "range": "7~12"},
+                    {"key": "ro_2nd_unit_diff_press", "label": "2차 R/O UNIT 차압", "unit": "Kg/Cm²", "range": "0~5"},
+                    {"key": "ro_2nd_prod_press", "label": "2차 R/O 생산수 압력", "unit": "Kg/Cm²", "range": "0~2"},
+                    {"key": "ro_2nd_prod_flow", "label": "2차 R/O 생산수 유량", "unit": "m³/hr", "range": "38~50"},
+                    {"key": "ro_2nd_brine_flow", "label": "2차 R/O 농축수 유량", "unit": "m³/hr", "range": "3.5~5"},
+                    {"key": "ro_2nd_prod_cond", "label": "2차 R/O 생산수 전도도", "unit": "uS/cm", "range": "0.3~1"}
+                ]
+            },
+            {
+                "title": "EDI (A, B, C, D 항상 입력)",
+                "fields": [
+                    {"key": "edi_feed_pump_press_a", "label": "EDI FEED PUMP A 압력", "unit": "Kg/Cm²", "range": "3~6", "group": "edi_feed_pump", "sub": "A"},
+                    {"key": "edi_feed_pump_press_b", "label": "EDI FEED PUMP B 압력", "unit": "Kg/Cm²", "range": "3~6", "group": "edi_feed_pump", "sub": "B"},
+                    
+                    {"key": "edi_feed_flow_a", "label": "EDI A FEED 유량", "unit": "m³/hr", "range": "10~13"},
+                    {"key": "edi_feed_flow_b", "label": "EDI B FEED 유량", "unit": "m³/hr", "range": "10~13"},
+                    {"key": "edi_feed_flow_c", "label": "EDI C FEED 유량", "unit": "m³/hr", "range": "10~13"},
+                    {"key": "edi_feed_flow_d", "label": "EDI D FEED 유량", "unit": "m³/hr", "range": "10~13"},
+                    
+                    {"key": "edi_brine_flow_a", "label": "EDI A 농축수 유량", "unit": "m³/hr", "range": "0.5~1.5"},
+                    {"key": "edi_brine_flow_b", "label": "EDI B 농축수 유량", "unit": "m³/hr", "range": "0.5~1.5"},
+                    {"key": "edi_brine_flow_c", "label": "EDI C 농축수 유량", "unit": "m³/hr", "range": "0.5~1.5"},
+                    {"key": "edi_brine_flow_d", "label": "EDI D 농축수 유량", "unit": "m³/hr", "range": "0.5~1.5"},
+                    
+                    {"key": "edi_inlet_press_a", "label": "EDI A 인입수 압력", "unit": "Kg/Cm²", "range": "1~4"},
+                    {"key": "edi_inlet_press_b", "label": "EDI B 인입수 압력", "unit": "Kg/Cm²", "range": "1~4"},
+                    {"key": "edi_inlet_press_c", "label": "EDI C 인입수 압력", "unit": "Kg/Cm²", "range": "1~4"},
+                    {"key": "edi_inlet_press_d", "label": "EDI D 인입수 압력", "unit": "Kg/Cm²", "range": "1~4"},
+                    
+                    {"key": "edi_amp_a", "label": "EDI A MODULE AMP", "unit": "AMP", "range": "2~6"},
+                    {"key": "edi_amp_b", "label": "EDI B MODULE AMP", "unit": "AMP", "range": "2~6"},
+                    {"key": "edi_amp_c", "label": "EDI C MODULE AMP", "unit": "AMP", "range": "2~6"},
+                    {"key": "edi_amp_d", "label": "EDI D MODULE AMP", "unit": "AMP", "range": "2~6"},
+                    
+                    {"key": "edi_volt_a", "label": "EDI A MODULE VOLT", "unit": "VOLT", "range": "20~250"},
+                    {"key": "edi_volt_b", "label": "EDI B MODULE VOLT", "unit": "VOLT", "range": "20~250"},
+                    {"key": "edi_volt_c", "label": "EDI C MODULE VOLT", "unit": "VOLT", "range": "20~250"},
+                    {"key": "edi_volt_d", "label": "EDI D MODULE VOLT", "unit": "VOLT", "range": "20~250"},
+                    
+                    {"key": "edi_total_prod_flow", "label": "EDI 생산수 유량", "unit": "m³/hr", "range": "30~35"},
+                    {"key": "edi_total_prod_cond", "label": "EDI 생산수 전도도", "unit": "MΩ·cm", "range": "15~18"}
+                ]
+            },
+            {
+                "title": "DI / M/B POLISHER",
+                "fields": [
+                    {"key": "di_feed_pump_press_a", "label": "DI FEED PUMP A 압력", "unit": "Kg/Cm²", "range": "3~6", "group": "di_feed_pump", "sub": "A"},
+                    {"key": "di_feed_pump_press_b", "label": "DI FEED PUMP B 압력", "unit": "Kg/Cm²", "range": "3~6", "group": "di_feed_pump", "sub": "B"},
+                    {"key": "di_supply_temp", "label": "DI 공급수 온도", "unit": "°C", "range": "24~26"},
+                    {"key": "di_polisher_purity", "label": "DI M/B POLISHER 후단 순도", "unit": "MΩ·cm", "range": "15~18"},
+                    {"key": "di_resin_trap_press_front", "label": "DI RESIN TRAP 전단 압력", "unit": "Kg/Cm²", "range": "0.5~1.5"},
+                    {"key": "di_resin_trap_press_rear", "label": "DI RESIN TRAP 후단 압력", "unit": "Kg/Cm²", "range": "0.5~1.5"},
+                    {"key": "uf_brine_flow", "label": "ULTRA FILTER 농축수 유량", "unit": "m³/hr", "range": "1.0~3.0"},
+                    {"key": "di_supply_press", "label": "DI 공급 압력", "unit": "Kg/Cm²", "range": "2~4"},
+                    {"key": "di_supply_flow", "label": "DI 공급 유량", "unit": "m³/hr", "range": "30~40"},
+                    {"key": "di_supply_purity", "label": "DI 공급 순도", "unit": "MΩ·cm", "range": "18.0"}
+                ]
+            }
+        ]
+    },
+    "C_DONG_1": {
+        "name": "C동 1차",
+        "sections": [
+            {
+                "title": "C동 1차 R/O 점검 항목",
+                "fields": [
+                    {"key": "ro_feed_pump_press", "label": "1. R/O Feed Pump Pressure", "unit": "kg/cm²", "range": "4.5~6.0"},
+                    {"key": "mf_inlet_press", "label": "2. MICRO FILTER 인입수 압력", "unit": "kg/cm²", "range": "1.5~2.5"},
+                    {"key": "mf_prod_press", "label": "3. MICRO FILTER 생산수 압력", "unit": "kg/cm²", "range": "1.4~2.2"},
+                    {"key": "inlet_cond", "label": "4. R/O 인입수 전도도", "unit": "uS/cm", "range": "45.0~70.0"},
+                    {"key": "prod_cond", "label": "5. R/O 생산수 전도도", "unit": "uS/cm", "range": "8.0~12.0"},
+                    {"key": "prod_flow", "label": "6. R/O 생산수 유량", "unit": "m³/hr", "range": "30.0~40.0"},
+                    {"key": "brine_flow", "label": "7. R/O 농축수 유량", "unit": "m³/hr", "range": "10.0~20.0"},
+                    {"key": "hp_pump_press", "label": "8. R/O 고압 P/P 압력", "unit": "kg/cm²", "range": "10.0~15.0"},
+                    {"key": "ro_feed_press", "label": "9. R/O Feed Pressure", "unit": "kg/cm²", "range": "5.0~12.0"},
+                    {"key": "brine_1st_press", "label": "10. R/O 1차 농축수 압력", "unit": "kg/cm²", "range": "5.0~10.0"},
+                    {"key": "brine_2nd_press", "label": "11. R/O 2차 농축수 압력", "unit": "kg/cm²", "range": "5.0~10.0"},
+                    {"key": "unit_diff_press", "label": "12. R/O UNIT 차압", "unit": "kg/cm²", "range": "0~5.0"},
+                    {"key": "prod_press", "label": "13. R/O Product Pressure", "unit": "kg/cm²", "range": "0~3.0"},
+                    {"key": "prod_temp", "label": "14. R/O 생산수 온도", "unit": "°C", "range": "20.0~30.0"}
+                ]
+            }
+        ]
+    },
+    "D_DONG_2METAL": {
+        "name": "D동 2메탈",
+        "sections": [
+            {
+                "title": "R/O 구분 (A/B운전 - 2중 1가동)",
+                "fields": [
+                    {"key": "ro_status", "label": "R/O 운전 구원", "type": "select", "options": ["A운전", "B운전", "전체정지"], "unit": "", "range": "-"},
+                    {"key": "ro_feed_pump_press", "label": "1. R/O Feed Pump Pressure", "unit": "kg/cm²", "range": "2.0~3.5"},
+                    {"key": "mf_inlet_press", "label": "2. R/O MICRO FILTER 인입수 압력", "unit": "kg/cm²", "range": "1.2~2.5"},
+                    {"key": "mf_prod_press", "label": "3. R/O MICRO FILTER 생산수 압력", "unit": "kg/cm²", "range": "0.7~1.8"},
+                    {"key": "inlet_cond", "label": "4. R/O 인입수 전도도", "unit": "uS/cm", "range": "20.0~50.0"},
+                    {"key": "prod_cond", "label": "5. R/O 생산수 전도도", "unit": "uS/cm", "range": "0~10.0"},
+                    {"key": "inlet_flow", "label": "6. R/O 인입수 유량", "unit": "m³/hr", "range": "50.0~70.0"},
+                    {"key": "prod_flow", "label": "7. R/O 생산수 유량", "unit": "m³/hr", "range": "45.0~60.0"},
+                    {"key": "brine_flow", "label": "8. R/O 농축수 유량", "unit": "m³/hr", "range": "8.0~15.0"},
+                    {"key": "hp_pump_press", "label": "9. R/O High Pressure Pump Pressure", "unit": "kg/cm²", "range": "8.5~12.0"},
+                    {"key": "ro_feed_press", "label": "10. R/O Feed Pressure", "unit": "kg/cm²", "range": "6.5~8.0"},
+                    {"key": "brine_1st_press", "label": "11. R/O 1차 농축수 압력", "unit": "kg/cm²", "range": "4.5~7.0"},
+                    {"key": "brine_2nd_press", "label": "12. R/O 2차 농축수 압력", "unit": "kg/cm²", "range": "2.0~6.5"},
+                    {"key": "unit_diff_press", "label": "13. R/O UNIT 차압", "unit": "kg/cm²", "range": "1.0~3.5"},
+                    {"key": "prod_press", "label": "14. R/O Product Pressure", "unit": "kg/cm²", "range": "0.5~3.0"},
+                    {"key": "prod_temp", "label": "15. R/O 생산수 온도", "unit": "°C", "range": "20.0~32.0"}
+                ]
+            },
+            {
+                "title": "2메탈, 3F 필터",
+                "fields": [
+                    {"key": "metal_inlet_press", "label": "1. 2-Metal Filter Inlet Pressure", "unit": "kg/cm²", "range": "2.5~6.0"},
+                    {"key": "metal_outlet_press", "label": "2. 2-Metal Filter Outlet Pressure", "unit": "kg/cm²", "range": "4.0~6.0"},
+                    {"key": "tw_3f_inlet_press", "label": "3. TW 3-F Filter Inlet Pressure", "unit": "kg/cm²", "range": "4.5~6.0"},
+                    {"key": "tw_3f_outlet_press", "label": "4. TW 3-F Filter Outlet Pressure", "unit": "kg/cm²", "range": "1.5~6.0"}
+                ]
+            }
+        ]
+    },
+    "D_DONG_PS_1_2F": {
+        "name": "D동 1.2F PS",
+        "sections": [
+            {
+                "title": "1차 R/O (A, B, C, D 4개 라인 항상 입력)",
+                "fields": [
+                    {"key": "ro_feed_pump_press_a", "label": "RO A FEED PUMP 압력", "unit": "Kg/Cm²", "range": "4~7"},
+                    {"key": "ro_feed_pump_press_b", "label": "RO B FEED PUMP 압력", "unit": "Kg/Cm²", "range": "4~7"},
+                    {"key": "ro_feed_pump_press_c", "label": "RO C FEED PUMP 압력", "unit": "Kg/Cm²", "range": "4~7"},
+                    {"key": "ro_feed_pump_press_d", "label": "RO D FEED PUMP 압력", "unit": "Kg/Cm²", "range": "4~7"},
+
+                    {"key": "ro_inlet_flow_a", "label": "RO A 1차 인입 유량", "unit": "m³/hr", "range": "30~60"},
+                    {"key": "ro_inlet_flow_b", "label": "RO B 1차 인입 유량", "unit": "m³/hr", "range": "30~60"},
+                    {"key": "ro_inlet_flow_c", "label": "RO C 1차 인입 유량", "unit": "m³/hr", "range": "30~60"},
+                    {"key": "ro_inlet_flow_d", "label": "RO D 1차 인입 유량", "unit": "m³/hr", "range": "30~60"},
+
+                    {"key": "ro_hp_pump_press_a", "label": "RO A 1차 고압 펌프 압력", "unit": "Kg/Cm²", "range": "13~18"},
+                    {"key": "ro_hp_pump_press_b", "label": "RO B 1차 고압 펌프 압력", "unit": "Kg/Cm²", "range": "13~18"},
+                    {"key": "ro_hp_pump_press_c", "label": "RO C 1차 고압 펌프 압력", "unit": "Kg/Cm²", "range": "13~18"},
+                    {"key": "ro_hp_pump_press_d", "label": "RO D 1차 고압 펌프 압력", "unit": "Kg/Cm²", "range": "13~18"},
+
+                    {"key": "ro_prod_flow_a", "label": "RO A 1차 생산수 유량", "unit": "m³/hr", "range": "30~60"},
+                    {"key": "ro_prod_flow_b", "label": "RO B 1차 생산수 유량", "unit": "m³/hr", "range": "30~60"},
+                    {"key": "ro_prod_flow_c", "label": "RO C 1차 생산수 유량", "unit": "m³/hr", "range": "30~60"},
+                    {"key": "ro_prod_flow_d", "label": "RO D 1차 생산수 유량", "unit": "m³/hr", "range": "30~60"}
+                ]
+            },
+            {
+                "title": "2차 R/O (PS 1/2F용 & PS 3F용 펌프 A/B 중 1개 가동)",
+                "fields": [
+                    {"key": "ro_2nd_ps12_hp_pump_press_a", "label": "PS 1/2F용 2차 RO 고압 펌프 A 압력", "unit": "Kg/Cm²", "range": "7~12", "group": "ro2_ps12_pump", "sub": "A"},
+                    {"key": "ro_2nd_ps12_hp_pump_press_b", "label": "PS 1/2F용 2차 RO 고압 펌프 B 압력", "unit": "Kg/Cm²", "range": "7~12", "group": "ro2_ps12_pump", "sub": "B"},
+                    
+                    {"key": "ro_2nd_ps3f_hp_pump_press_a", "label": "PS 3F용 2차 RO 고압 펌프 A 압력", "unit": "Kg/Cm²", "range": "7~12", "group": "ro2_ps3f_pump", "sub": "A"},
+                    {"key": "ro_2nd_ps3f_hp_pump_press_b", "label": "PS 3F용 2차 RO 고압 펌프 B 압력", "unit": "Kg/Cm²", "range": "7~12", "group": "ro2_ps3f_pump", "sub": "B"},
+
+                    {"key": "ro_2nd_ps12_prod_flow", "label": "PS 1/2F용 2차 RO 생산수 유량", "unit": "m³/hr", "range": "38~50"},
+                    {"key": "ro_2nd_ps3f_prod_flow", "label": "PS 3F용 2차 RO 생산수 유량", "unit": "m³/hr", "range": "38~50"}
+                ]
+            },
+            {
+                "title": "EDI (EDI A, B, C 각 4개 모듈 항상 입력)",
+                "fields": [
+                    {"key": "edi_a1_flow", "label": "EDI A-1 공급유량", "unit": "m³/hr", "range": "10~14"},
+                    {"key": "edi_a2_flow", "label": "EDI A-2 공급유량", "unit": "m³/hr", "range": "10~14"},
+                    {"key": "edi_a3_flow", "label": "EDI A-3 공급유량", "unit": "m³/hr", "range": "10~14"},
+                    {"key": "edi_a4_flow", "label": "EDI A-4 공급유량", "unit": "m³/hr", "range": "10~14"},
+
+                    {"key": "edi_b1_flow", "label": "EDI B-1 공급유량", "unit": "m³/hr", "range": "10~14"},
+                    {"key": "edi_b2_flow", "label": "EDI B-2 공급유량", "unit": "m³/hr", "range": "10~14"},
+                    {"key": "edi_b3_flow", "label": "EDI B-3 공급유량", "unit": "m³/hr", "range": "10~14"},
+                    {"key": "edi_b4_flow", "label": "EDI B-4 공급유량", "unit": "m³/hr", "range": "10~14"},
+
+                    {"key": "edi_c1_flow", "label": "EDI C-1 공급유량", "unit": "m³/hr", "range": "10~14"},
+                    {"key": "edi_c2_flow", "label": "EDI C-2 공급유량", "unit": "m³/hr", "range": "10~14"},
+                    {"key": "edi_c3_flow", "label": "EDI C-3 공급유량", "unit": "m³/hr", "range": "10~14"},
+                    {"key": "edi_c4_flow", "label": "EDI C-4 공급유량", "unit": "m³/hr", "range": "10~14"}
+                ]
+            }
+        ]
+    },
+    "PS_3F": {
+        "name": "PS 3F",
+        "sections": [
+            {
+                "title": "PS 3F RO 점검 항목",
+                "fields": [
+                    {"key": "supply_press", "label": "R/O 공급 압력", "unit": "Kg/Cm²", "range": "4~7"},
+                    {"key": "inlet_flow", "label": "1차 R/O 인입수 유량", "unit": "m³/hr", "range": "30~60"},
+                    {"key": "hp_pump_press", "label": "1차 R/O 고압 펌프 압력", "unit": "Kg/Cm²", "range": "13~18"},
+                    {"key": "feed_press", "label": "1차 RO FEED 압력", "unit": "Kg/Cm²", "range": "7~15"},
+                    {"key": "brine_1st_press", "label": "1차 RO 1st 농축수 압력", "unit": "Kg/Cm²", "range": "5~10"},
+                    {"key": "brine_2nd_press", "label": "1차 RO 2nd 농축수 압력", "unit": "Kg/Cm²", "range": "5~10"},
+                    {"key": "unit_diff_press", "label": "1차 RO UNIT 차압", "unit": "Kg/Cm²", "range": "0~5"},
+                    {"key": "prod_press", "label": "1차 RO 생산수 압력", "unit": "Kg/Cm²", "range": "0~2"},
+                    {"key": "prod_flow", "label": "1차 RO 생산수 유량", "unit": "m³/hr", "range": "30~60"},
+                    {"key": "brine_flow", "label": "1차 RO 농축수 유량", "unit": "m³/hr", "range": "8~15"},
+                    {"key": "inlet_cond", "label": "1차 RO 인입수 전도도", "unit": "uS/cm", "range": "20이하"},
+                    {"key": "prod_cond", "label": "1차 RO 생산수 전도도", "unit": "uS/cm", "range": "10이하"},
+                    {"key": "feed_temp", "label": "R/O Feed Temperature", "unit": "°C", "range": "23~25"}
+                ]
+            }
+        ]
+    },
+    "E_DONG": {
+        "name": "E동",
+        "sections": [
+            {
+                "title": "1차 R/O (RO A, B, C - 3중 2가동)",
+                "fields": [
+                    {"key": "ro_feed_pump_press_a", "label": "RO A FEED PUMP 압력", "unit": "Kg/Cm²", "range": "3~6", "group": "e_ro1", "sub": "A"},
+                    {"key": "ro_feed_pump_press_b", "label": "RO B FEED PUMP 압력", "unit": "Kg/Cm²", "range": "3~6", "group": "e_ro1", "sub": "B"},
+                    {"key": "ro_feed_pump_press_c", "label": "RO C FEED PUMP 압력", "unit": "Kg/Cm²", "range": "3~6", "group": "e_ro1", "sub": "C"},
+
+                    {"key": "ro_hp_pump_press_a", "label": "RO A 1차 고압 펌프 압력", "unit": "Kg/Cm²", "range": "10~15", "group": "e_ro1", "sub": "A"},
+                    {"key": "ro_hp_pump_press_b", "label": "RO B 1차 고압 펌프 압력", "unit": "Kg/Cm²", "range": "10~15", "group": "e_ro1", "sub": "B"},
+                    {"key": "ro_hp_pump_press_c", "label": "RO C 1차 고압 펌프 압력", "unit": "Kg/Cm²", "range": "10~15", "group": "e_ro1", "sub": "C"},
+
+                    {"key": "ro_prod_flow_a", "label": "RO A 1차 생산수 유량", "unit": "m³/hr", "range": "50~70", "group": "e_ro1", "sub": "A"},
+                    {"key": "ro_prod_flow_b", "label": "RO B 1차 생산수 유량", "unit": "m³/hr", "range": "50~70", "group": "e_ro1", "sub": "B"},
+                    {"key": "ro_prod_flow_c", "label": "RO C 1차 생산수 유량", "unit": "m³/hr", "range": "50~70", "group": "e_ro1", "sub": "C"}
+                ]
+            },
+            {
+                "title": "2차 R/O (고압 펌프 A/B - 2중 1가동)",
+                "fields": [
+                    {"key": "ro_2nd_hp_pump_press_a", "label": "2차 R/O 고압 펌프 A 압력", "unit": "Kg/Cm²", "range": "7~12", "group": "e_ro2_pump", "sub": "A"},
+                    {"key": "ro_2nd_hp_pump_press_b", "label": "2차 R/O 고압 펌프 B 압력", "unit": "Kg/Cm²", "range": "7~12", "group": "e_ro2_pump", "sub": "B"},
+                    {"key": "ro_2nd_prod_flow", "label": "2차 R/O 생산수 유량", "unit": "m³/hr", "range": "80~100"}
+                ]
+            },
+            {
+                "title": "EDI (EDI A, B - 2중 1가동)",
+                "fields": [
+                    {"key": "edi_feed_pump_press_a", "label": "EDI FEED PUMP A 압력", "unit": "Kg/Cm²", "range": "3~8", "group": "e_edi", "sub": "A"},
+                    {"key": "edi_feed_pump_press_b", "label": "EDI FEED PUMP B 압력", "unit": "Kg/Cm²", "range": "3~8", "group": "e_edi", "sub": "B"},
+                    {"key": "edi_prod_in_flow_a", "label": "EDI A 생산수 IN 유량", "unit": "m³/hr", "range": "9~12", "group": "e_edi", "sub": "A"},
+                    {"key": "edi_prod_in_flow_b", "label": "EDI B 생산수 IN 유량", "unit": "m³/hr", "range": "9~12", "group": "e_edi", "sub": "B"},
+                    {"key": "edi_prod_flow", "label": "EDI 생산수 유량", "unit": "m³/hr", "range": "30~50"},
+                    {"key": "edi_prod_cond", "label": "EDI 생산수 전도도", "unit": "MΩ·cm", "range": "10~18"}
+                ]
+            }
+        ]
+    }
+}
+
+# Authentication API
+@app.post("/api/login")
+def login(payload: LoginRequest):
+    if payload.user_id == "1234" and payload.password == "5678":
+        token = database.create_session("1234")
+        return {"token": token, "message": "Login successful"}
+    raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 올바르지 않습니다.")
+
+@app.get("/api/verify")
+def verify_token(authorization: Optional[str] = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="No token provided")
+    token = authorization.replace("Bearer ", "").strip()
+    if database.verify_session(token):
+        return {"status": "ok", "user": "1234"}
+    raise HTTPException(status_code=401, detail="Invalid token")
 
 @app.get("/api/buildings")
 def get_buildings():
@@ -259,7 +418,6 @@ def delete_inspection(log_id: int):
         raise HTTPException(status_code=404, detail="Inspection log not found")
     return {"message": "Log deleted successfully"}
 
-# Trend API with Date Filter (start_date, end_date)
 @app.get("/api/trends")
 def get_trends(
     building_code: str,
@@ -291,7 +449,6 @@ def get_trends(
         "values": values
     }
 
-# CSV Export API with Date Filter (start_date, end_date)
 @app.get("/api/export-csv")
 def export_csv(
     building_code: Optional[str] = Query(None),
@@ -338,7 +495,7 @@ def export_csv(
         writer.writerow(row)
         
     output.seek(0)
-    filename = f"RO_Inspection_Logs_{building_code or 'ALL'}.csv"
+    filename = f"RO_EDI_Inspection_Logs_{building_code or 'ALL'}.csv"
     return Response(
         content=output.getvalue(),
         media_type="text/csv; charset=utf-8",

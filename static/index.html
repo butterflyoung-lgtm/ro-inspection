@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>RO 순수 점검일지 시스템</title>
+    <title>RO/EDI 순수 운영점검일지</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,23 +12,50 @@
 </head>
 <body>
 
+    <!-- Login Modal Screen -->
+    <div id="login-modal" class="login-overlay active">
+        <div class="login-card">
+            <div class="login-header">
+                <span class="login-icon">💧</span>
+                <h2>RO/EDI 점검일지 로그인</h2>
+                <p>사내 시스템 접속을 위해 로그인해 주세요</p>
+            </div>
+            <form onsubmit="handleLoginSubmit(event)" class="login-form">
+                <div class="input-group">
+                    <label for="login-id">아이디</label>
+                    <input type="text" id="login-id" placeholder="아이디 입력 (1234)" required autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label for="login-pw">비밀번호</label>
+                    <input type="password" id="login-pw" placeholder="비밀번호 입력 (5678)" required autocomplete="current-password">
+                </div>
+                <div id="login-error" class="login-error"></div>
+                <button type="submit" class="btn-login">로그인</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application Header -->
     <header class="top-header">
         <div class="header-container">
             <div class="brand">
                 <span class="logo-icon">💧</span>
                 <div class="brand-text">
-                    <h1>RO 순수 점검일지</h1>
-                    <span class="sub-title">스마트 현장 점검 & 트렌드 분석 시스템</span>
+                    <h1>RO/EDI 순수 운영점검일지</h1>
+                    <span class="sub-title">B동·C동·D동·E동 현장 점검 시스템</span>
                 </div>
             </div>
             
-            <div class="view-mode-toggle">
-                <button id="btn-mode-form" class="mode-btn active" onclick="switchViewMode('form')">
-                    <span>📝</span> 점검 작성
-                </button>
-                <button id="btn-mode-dashboard" class="mode-btn" onclick="switchViewMode('dashboard')">
-                    <span>📈</span> 트렌드 & 히스토리
-                </button>
+            <div class="header-actions">
+                <div class="view-mode-toggle">
+                    <button id="btn-mode-form" class="mode-btn active" onclick="switchViewMode('form')">
+                        <span>📝</span> 점검 작성
+                    </button>
+                    <button id="btn-mode-dashboard" class="mode-btn" onclick="switchViewMode('dashboard')">
+                        <span>📈</span> 트렌드 & 히스토리
+                    </button>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">로그아웃</button>
             </div>
         </div>
 
@@ -66,14 +93,14 @@
                     </div>
                 </div>
 
-                <!-- Structured Spreadsheet Tables -->
+                <!-- Structured Mobile High-Density Form Container -->
                 <div id="form-fields-container">
                     <!-- Dynamic Content -->
                 </div>
 
                 <div class="notes-card">
                     <label for="input-notes">📝 특이사항 및 비고</label>
-                    <textarea id="input-notes" rows="3" placeholder="특이사항이나 장비 교체/이상 메모를 작성하세요..."></textarea>
+                    <textarea id="input-notes" rows="2" placeholder="특이사항이나 장비 이상/교체 메모를 작성하세요..."></textarea>
                 </div>
 
                 <div class="submit-bar">
@@ -84,9 +111,9 @@
             </form>
         </section>
 
-        <!-- VIEW 2: 데스크톱 트렌드 차트 & 히스토리 데이터 관리 -->
+        <!-- VIEW 2: 트렌드 차트 & 히스토리 데이터 관리 -->
         <section id="view-dashboard" class="view-section">
-            <!-- Global Date Range Filter Bar for Trends, History & Excel Export -->
+            <!-- Global Date Range Filter Bar -->
             <div class="dashboard-card filter-card">
                 <div class="global-filter-row">
                     <div class="filter-group">
@@ -150,7 +177,7 @@
         </section>
     </main>
 
-    <!-- Detail / Edit Modal -->
+    <!-- Detail Modal -->
     <div id="modal-container" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
