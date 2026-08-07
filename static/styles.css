@@ -373,7 +373,7 @@ input.is-modified-value, select.is-modified-value {
     padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .grid-row-item {
@@ -383,11 +383,17 @@ input.is-modified-value, select.is-modified-value {
     padding: 10px 12px;
 }
 
+.grid-single-row {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    padding: 10px 12px;
+}
+
 .grid-row-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     font-weight: 700;
     font-size: 0.9rem;
     color: #1e3a8a;
@@ -452,9 +458,17 @@ input.is-modified-value, select.is-modified-value {
 .status-badge {
     font-size: 0.72rem;
     font-weight: 700;
-    padding: 2px 6px;
+    padding: 2px 8px;
     border-radius: 8px;
     display: inline-block;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+}
+
+.status-badge:hover {
+    transform: scale(1.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .status-active {
@@ -485,7 +499,7 @@ input.is-modified-value, select.is-modified-value {
     border: 1px solid #cbd5e1;
 }
 
-/* Number Input (Empty placeholder, NO '수치' text!) */
+/* Number Input (Empty placeholder) */
 .cell-input-container {
     position: relative;
     width: 100%;
@@ -502,12 +516,12 @@ input.is-modified-value, select.is-modified-value {
 
 .unit-suffix-inline {
     position: absolute;
-    right: 6px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
     color: #64748b;
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.78rem;
+    font-weight: 700;
     pointer-events: none;
 }
 
@@ -758,7 +772,6 @@ input.is-modified-value, select.is-modified-value {
         justify-content: center;
     }
     
-    /* 4-col wraps into a clean 2x2 grid on mobile phone screens! */
     .grid-4col {
         grid-template-columns: repeat(2, 1fr);
     }
