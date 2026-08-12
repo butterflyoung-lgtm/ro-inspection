@@ -101,28 +101,37 @@ async function loadBuildingTabsOnly() {
     }
 }
 
+// Helper to auto-advance focus to the next input field
+function advanceToNextInput(currentElement) {
+    const inputs = Array.from(document.querySelectorAll("#form-fields-container input:not([disabled]), #form-fields-container select:not([disabled])"));
+    const idx = inputs.indexOf(currentElement);
+    if (idx !== -1 && idx < inputs.length - 1) {
+        const nextInput = inputs[idx + 1];
+        nextInput.focus();
+        if (nextInput.select && typeof nextInput.select === "function") {
+            nextInput.select();
+        }
+        nextInput.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+}
+
 // App Initialization
 async function initApp() {
     document.getElementById("input-date").value = new Date().toISOString().split("T")[0];
     
-    // Global Enter key handler for fast mobile & desktop input navigation
+    // Global Enter / Mobile Check mark (✓) / Done key handler for fast navigation
     const container = document.getElementById("form-fields-container");
     if (container) {
-        container.addEventListener("keydown", function(e) {
-            if (e.key === "Enter" || e.keyCode === 13) {
+        const handleKeyAdvance = function(e) {
+            const isAdvanceKey = e.key === "Enter" || e.key === "Done" || e.key === "Next" || 
+                                 e.keyCode === 13 || e.keyCode === 10 || 
+                                 e.code === "Enter" || e.code === "NumpadEnter";
+            if (isAdvanceKey) {
                 e.preventDefault();
-                const inputs = Array.from(document.querySelectorAll("#form-fields-container input:not([disabled]), #form-fields-container select:not([disabled])"));
-                const idx = inputs.indexOf(e.target);
-                if (idx !== -1 && idx < inputs.length - 1) {
-                    const nextInput = inputs[idx + 1];
-                    nextInput.focus();
-                    if (nextInput.select && typeof nextInput.select === "function") {
-                        nextInput.select();
-                    }
-                    nextInput.scrollIntoView({ behavior: "smooth", block: "center" });
-                }
+                advanceToNextInput(e.target);
             }
-        });
+        };
+        container.addEventListener("keydown", handleKeyAdvance);
     }
     
     // Offline & Network Event Listeners
