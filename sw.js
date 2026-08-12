@@ -1,10 +1,10 @@
 // Service Worker for RO/EDI Offline Inspection App Support
-const CACHE_NAME = 'ro-edi-inspection-v2';
+const CACHE_NAME = 'ro-edi-inspection-v4';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
-    '/styles.css',
-    '/app.js',
+    '/styles.css?v=4.4',
+    '/app.js?v=4.4',
     '/api/buildings'
 ];
 

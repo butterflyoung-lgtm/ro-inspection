@@ -125,7 +125,7 @@ function advanceToNextInput(currentElement) {
 async function initApp() {
     document.getElementById("input-date").value = new Date().toISOString().split("T")[0];
     
-    // Global Enter / Mobile Check mark (✓) / Done key handler for fast navigation
+    // Global Enter / Mobile Check mark (✓) / Done key handler for fast navigation (with native focus check)
     const container = document.getElementById("form-fields-container");
     if (container) {
         const handleKeyAdvance = function(e) {
@@ -133,8 +133,18 @@ async function initApp() {
                                  e.keyCode === 13 || e.keyCode === 10 || 
                                  e.code === "Enter" || e.code === "NumpadEnter";
             if (isAdvanceKey) {
-                e.preventDefault();
-                advanceToNextInput(e.target);
+                const currentElement = e.target;
+                
+                const now = Date.now();
+                if (now - lastAdvanceTime < 350) return;
+                lastAdvanceTime = now;
+                
+                // 50ms check: If mobile OS keyboard ALREADY natively moved focus, JS stands down (prevents double-jump!)
+                setTimeout(() => {
+                    if (document.activeElement === currentElement) {
+                        advanceToNextInput(currentElement);
+                    }
+                }, 50);
             }
         };
         container.addEventListener("keydown", handleKeyAdvance);
@@ -528,36 +538,49 @@ function saveOfflineQueue(queue) {
     updateNetworkStatus();
 }
 
-async function updateNetworkStatus() {
-    isRealOnline = await checkRealOnlineStatus();
-    const queue = getOfflineQueue();
-    
+function renderNetworkStatusUI(isOnline, queueLength) {
     const statusBar = document.getElementById("network-status-bar");
     const iconSpan = document.getElementById("network-icon");
     const textSpan = document.getElementById("network-text");
     const syncBtn = document.getElementById("btn-sync-offline-queue");
     const countSpan = document.getElementById("offline-queue-count");
     
-    if (countSpan) countSpan.textContent = queue.length;
+    if (countSpan) countSpan.textContent = queueLength;
     
-    if (queue.length > 0) {
+    if (queueLength > 0) {
         if (syncBtn) syncBtn.style.display = "inline-flex";
     } else {
         if (syncBtn) syncBtn.style.display = "none";
     }
     
-    if (!isRealOnline) {
+    if (!isOnline) {
         if (statusBar) statusBar.className = "network-status-bar offline";
         if (iconSpan) iconSpan.textContent = "📵";
-        if (textSpan) textSpan.textContent = `음영지역 / 오프라인 상태 (작성 일지 대기 큐 ${queue.length}개 보관 중)`;
+        if (textSpan) textSpan.textContent = `음영지역 / 오프라인 상태 (작성 일지 대기 큐 ${queueLength}개 보관 중)`;
     } else {
         if (statusBar) statusBar.className = "network-status-bar online";
         if (iconSpan) iconSpan.textContent = "📶";
-        if (queue.length > 0) {
-            if (textSpan) textSpan.textContent = `인터넷 연결됨! (대기 중인 오프라인 일지 ${queue.length}개 발견)`;
+        if (queueLength > 0) {
+            if (textSpan) textSpan.textContent = `인터넷 연결됨! (대기 중인 오프라인 일지 ${queueLength}개 발견)`;
         } else {
             if (textSpan) textSpan.textContent = "온라인 상태 (서버 실시간 저장 가능)";
         }
+    }
+}
+
+async function updateNetworkStatus() {
+    const queue = getOfflineQueue();
+    
+    // 1. Instant 0ms UI update based on browser navigator.onLine
+    let isOnline = navigator.onLine;
+    renderNetworkStatusUI(isOnline, queue.length);
+    
+    // 2. Perform async ping check if browser claims online
+    if (isOnline) {
+        isRealOnline = await checkRealOnlineStatus();
+        renderNetworkStatusUI(isRealOnline, queue.length);
+    } else {
+        isRealOnline = false;
     }
 }
 
