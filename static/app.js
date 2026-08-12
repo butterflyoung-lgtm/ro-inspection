@@ -134,14 +134,17 @@ async function initApp() {
         container.addEventListener("keydown", handleKeyAdvance);
     }
     
-    // Offline & Network Event Listeners
-    window.addEventListener("online", () => {
-        updateNetworkStatus();
-        syncOfflineQueue();
+    // Offline & Network Event Listeners & Active Heartbeat Check
+    window.addEventListener("online", async () => {
+        await updateNetworkStatus();
+        if (isRealOnline) syncOfflineQueue();
     });
     window.addEventListener("offline", () => {
         updateNetworkStatus();
     });
+    
+    // Check real network connectivity status every 3 seconds
+    setInterval(updateNetworkStatus, 3000);
     updateNetworkStatus();
     
     try {
@@ -150,8 +153,8 @@ async function initApp() {
         renderBuildingTabs();
         loadBuildingForm(currentBuildingCode);
         
-        // Auto-sync if online and pending items exist
-        if (navigator.onLine && getOfflineQueue().length > 0) {
+        // Auto-sync if real online and pending items exist
+        if (isRealOnline && getOfflineQueue().length > 0) {
             syncOfflineQueue();
         }
     } catch (e) {
@@ -483,6 +486,28 @@ function clearBuildingDraft(buildingCode) {
     renderBuildingTabs();
 }
 
+let isRealOnline = true;
+
+async function checkRealOnlineStatus() {
+    if (!navigator.onLine) return false;
+    
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        
+        const res = await fetch("/api/buildings", {
+            method: "GET",
+            cache: "no-store",
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        return res.ok || res.status === 200 || res.status === 304;
+    } catch(e) {
+        return false;
+    }
+}
+
 function getOfflineQueue() {
     try {
         return JSON.parse(localStorage.getItem("RO_EDI_OFFLINE_QUEUE") || "[]");
@@ -496,8 +521,8 @@ function saveOfflineQueue(queue) {
     updateNetworkStatus();
 }
 
-function updateNetworkStatus() {
-    const isOnline = navigator.onLine;
+async function updateNetworkStatus() {
+    isRealOnline = await checkRealOnlineStatus();
     const queue = getOfflineQueue();
     
     const statusBar = document.getElementById("network-status-bar");
@@ -514,7 +539,7 @@ function updateNetworkStatus() {
         if (syncBtn) syncBtn.style.display = "none";
     }
     
-    if (!isOnline) {
+    if (!isRealOnline) {
         if (statusBar) statusBar.className = "network-status-bar offline";
         if (iconSpan) iconSpan.textContent = "📵";
         if (textSpan) textSpan.textContent = `음영지역 / 오프라인 상태 (작성 일지 대기 큐 ${queue.length}개 보관 중)`;
@@ -551,7 +576,8 @@ async function syncOfflineQueue() {
         return;
     }
     
-    if (!navigator.onLine) {
+    const onlineNow = await checkRealOnlineStatus();
+    if (!onlineNow) {
         showToast("📵 아직 인터넷 신호가 없습니다. 데이터가 터지는 곳으로 이동해 주세요.");
         return;
     }
