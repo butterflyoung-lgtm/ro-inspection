@@ -125,11 +125,26 @@ async function initApp() {
         });
     }
     
+    // Offline & Network Event Listeners
+    window.addEventListener("online", () => {
+        updateNetworkStatus();
+        syncOfflineQueue();
+    });
+    window.addEventListener("offline", () => {
+        updateNetworkStatus();
+    });
+    updateNetworkStatus();
+    
     try {
         const res = await fetch("/api/buildings");
         buildingSchemas = await res.json();
         renderBuildingTabs();
         loadBuildingForm(currentBuildingCode);
+        
+        // Auto-sync if online and pending items exist
+        if (navigator.onLine && getOfflineQueue().length > 0) {
+            syncOfflineQueue();
+        }
     } catch (e) {
         console.error("Failed to load schemas", e);
     }
@@ -144,13 +159,19 @@ function renderBuildingTabs() {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = `tab-btn ${code === currentBuildingCode ? 'active' : ''}`;
-        btn.textContent = schema.name;
+        
+        const hasDraft = !!localStorage.getItem(`RO_EDI_DRAFT_${code}`);
+        btn.innerHTML = `${schema.name} ${hasDraft ? '<span class="draft-badge">작성중</span>' : ''}`;
+        
         btn.onclick = () => switchBuildingTab(code);
         tabsContainer.appendChild(btn);
     });
 }
 
 function switchBuildingTab(code) {
+    if (currentBuildingCode && currentViewMode === "form") {
+        saveCurrentBuildingDraft();
+    }
     currentBuildingCode = code;
     renderBuildingTabs();
     if (!authToken) {
@@ -169,6 +190,9 @@ function switchViewMode(mode) {
         showToast("로그인 후 이용 가능합니다.");
         return;
     }
+    if (mode === "dashboard" && currentViewMode === "form") {
+        saveCurrentBuildingDraft();
+    }
     currentViewMode = mode;
     document.getElementById("btn-mode-form").classList.toggle("active", mode === "form");
     document.getElementById("btn-mode-dashboard").classList.toggle("active", mode === "dashboard");
@@ -180,7 +204,7 @@ function switchViewMode(mode) {
     }
 }
 
-// Render Form with Ultra-Clean Layout
+// Render Form with Ultra-Clean Layout & Draft Restoration
 function loadBuildingForm(buildingCode) {
     const schema = buildingSchemas[buildingCode];
     if (!schema) return;
@@ -330,6 +354,7 @@ function handleInputChange(input) {
         input.classList.add('is-modified-value');
     }
     evaluateStandbyGroups();
+    saveCurrentBuildingDraft();
 }
 
 function toggleBadgeStatus(key) {
@@ -356,6 +381,208 @@ function toggleBadgeStatus(key) {
         badge.removeAttribute("data-manual-lock");
     }
     evaluateStandbyGroups();
+    saveCurrentBuildingDraft();
+}
+
+// ----------------------------------------------------
+// Offline Draft & Sync Queue Helper Functions
+// ----------------------------------------------------
+function saveCurrentBuildingDraft() {
+    if (!currentBuildingCode || !buildingSchemas[currentBuildingCode]) return;
+    const schema = buildingSchemas[currentBuildingCode];
+    
+    const valuesDict = {};
+    let hasAnyValue = false;
+    
+    schema.sections.forEach(sec => {
+        sec.fields.forEach(f => {
+            const input = document.getElementById(`input-${f.key}`);
+            if (input) {
+                const val = input.disabled ? "비가동" : input.value;
+                valuesDict[f.key] = val;
+                if (val !== "" && val !== "비가동") {
+                    hasAnyValue = true;
+                }
+            }
+        });
+    });
+    
+    const dateVal = document.getElementById("input-date")?.value || "";
+    const inspectorVal = document.getElementById("input-inspector")?.value || "";
+    const notesVal = document.getElementById("input-notes")?.value || "";
+    
+    if (hasAnyValue || notesVal !== "") {
+        const draftObj = {
+            building_code: currentBuildingCode,
+            inspection_date: dateVal,
+            inspector: inspectorVal,
+            notes: notesVal,
+            values: valuesDict,
+            updated_at: new Date().toISOString()
+        };
+        localStorage.setItem(`RO_EDI_DRAFT_${currentBuildingCode}`, JSON.stringify(draftObj));
+    } else {
+        localStorage.removeItem(`RO_EDI_DRAFT_${currentBuildingCode}`);
+    }
+    renderBuildingTabs();
+}
+
+function loadBuildingDraft(buildingCode) {
+    const raw = localStorage.getItem(`RO_EDI_DRAFT_${buildingCode}`);
+    if (!raw) return;
+    try {
+        const draft = JSON.parse(raw);
+        if (draft.inspection_date && document.getElementById("input-date")) {
+            document.getElementById("input-date").value = draft.inspection_date;
+        }
+        if (draft.inspector && document.getElementById("input-inspector")) {
+            document.getElementById("input-inspector").value = draft.inspector;
+        }
+        if (draft.notes && document.getElementById("input-notes")) {
+            document.getElementById("input-notes").value = draft.notes;
+        }
+        if (draft.values) {
+            Object.keys(draft.values).forEach(k => {
+                const input = document.getElementById(`input-${k}`);
+                if (input) {
+                    const val = draft.values[k];
+                    if (val === "비가동") {
+                        input.disabled = true;
+                        input.placeholder = "비가동";
+                        const key = k;
+                        const badge = document.getElementById(`badge-${key}`);
+                        if (badge) {
+                            badge.className = "status-badge status-locked";
+                            badge.textContent = "비가동";
+                            badge.setAttribute("data-manual-lock", "true");
+                        }
+                    } else if (val !== "") {
+                        input.value = val;
+                        input.classList.add('is-modified-value');
+                    }
+                }
+            });
+            evaluateStandbyGroups();
+        }
+    } catch(e) {
+        console.error("Failed to load draft", e);
+    }
+}
+
+function clearBuildingDraft(buildingCode) {
+    localStorage.removeItem(`RO_EDI_DRAFT_${buildingCode}`);
+    renderBuildingTabs();
+}
+
+function getOfflineQueue() {
+    try {
+        return JSON.parse(localStorage.getItem("RO_EDI_OFFLINE_QUEUE") || "[]");
+    } catch(e) {
+        return [];
+    }
+}
+
+function saveOfflineQueue(queue) {
+    localStorage.setItem("RO_EDI_OFFLINE_QUEUE", JSON.stringify(queue));
+    updateNetworkStatus();
+}
+
+function updateNetworkStatus() {
+    const isOnline = navigator.onLine;
+    const queue = getOfflineQueue();
+    
+    const statusBar = document.getElementById("network-status-bar");
+    const iconSpan = document.getElementById("network-icon");
+    const textSpan = document.getElementById("network-text");
+    const syncBtn = document.getElementById("btn-sync-offline-queue");
+    const countSpan = document.getElementById("offline-queue-count");
+    
+    if (countSpan) countSpan.textContent = queue.length;
+    
+    if (queue.length > 0) {
+        if (syncBtn) syncBtn.style.display = "inline-flex";
+    } else {
+        if (syncBtn) syncBtn.style.display = "none";
+    }
+    
+    if (!isOnline) {
+        if (statusBar) statusBar.className = "network-status-bar offline";
+        if (iconSpan) iconSpan.textContent = "📵";
+        if (textSpan) textSpan.textContent = `음영지역 / 오프라인 상태 (작성 일지 대기 큐 ${queue.length}개 보관 중)`;
+    } else {
+        if (statusBar) statusBar.className = "network-status-bar online";
+        if (iconSpan) iconSpan.textContent = "📶";
+        if (queue.length > 0) {
+            if (textSpan) textSpan.textContent = `인터넷 연결됨! (대기 중인 오프라인 일지 ${queue.length}개 발견)`;
+        } else {
+            if (textSpan) textSpan.textContent = "온라인 상태 (서버 실시간 저장 가능)";
+        }
+    }
+}
+
+function queueOfflineInspection(payload) {
+    const queue = getOfflineQueue();
+    queue.push({
+        id: Date.now(),
+        payload: payload,
+        queued_at: new Date().toISOString()
+    });
+    saveOfflineQueue(queue);
+    
+    clearBuildingDraft(payload.building_code);
+    
+    const bName = buildingSchemas[payload.building_code] ? buildingSchemas[payload.building_code].name : payload.building_code;
+    showToast(`📵 [${bName}] 오프라인 임시 저장 완료! (대기 큐: ${queue.length}개)\n데이터가 터지는 곳 이동 시 자동 동기화됩니다.`);
+}
+
+async function syncOfflineQueue() {
+    const queue = getOfflineQueue();
+    if (queue.length === 0) {
+        showToast("대기 중인 오프라인 일지가 없습니다.");
+        return;
+    }
+    
+    if (!navigator.onLine) {
+        showToast("📵 아직 인터넷 신호가 없습니다. 데이터가 터지는 곳으로 이동해 주세요.");
+        return;
+    }
+    
+    showToast(`🔄 대기 중인 점검일지 ${queue.length}개 서버 동기화 진행 중...`);
+    
+    let successCount = 0;
+    const remainingQueue = [];
+    
+    for (const item of queue) {
+        try {
+            const res = await fetch("/api/inspections", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${authToken}`
+                },
+                body: JSON.stringify(item.payload)
+            });
+            
+            if (res.ok) {
+                successCount++;
+            } else {
+                remainingQueue.push(item);
+            }
+        } catch(e) {
+            remainingQueue.push(item);
+        }
+    }
+    
+    saveOfflineQueue(remainingQueue);
+    
+    if (successCount > 0) {
+        showToast(`🎉 오프라인에서 작성한 ${successCount}개 점검일지가 서버로 모두 전송되었습니다!`);
+        if (currentViewMode === "dashboard") {
+            onGlobalFilterChange();
+        }
+    } else {
+        showToast("❌ 서버 통신 문제로 동기화에 실패했습니다. 다시 시도해 주세요.");
+    }
 }
 
 // Active/Standby Auto-Locking Logic
@@ -491,13 +718,14 @@ async function copyPreviousLog() {
         });
         
         evaluateStandbyGroups();
+        saveCurrentBuildingDraft();
         showToast(`이전 점검 값(${prevLog.inspection_date}) 불러오기 완료!`);
     } catch (e) {
         showToast("이전 기록을 가져오지 못했습니다.");
     }
 }
 
-// Form Submit Handler
+// Form Submit Handler (Support Offline Queue)
 async function handleFormSubmit(e) {
     e.preventDefault();
     
@@ -531,6 +759,12 @@ async function handleFormSubmit(e) {
         notes: notesVal
     };
     
+    // Check if offline
+    if (!navigator.onLine) {
+        queueOfflineInspection(payload);
+        return;
+    }
+    
     try {
         const res = await fetch("/api/inspections", {
             method: "POST",
@@ -542,13 +776,14 @@ async function handleFormSubmit(e) {
         });
         
         if (res.ok) {
-            showToast("✅ 점검일지가 성공적으로 저장되었습니다!");
+            clearBuildingDraft(currentBuildingCode);
+            showToast(`✅ [${schema.name}] 점검일지가 성공적으로 저장되었습니다!`);
             document.getElementById("input-notes").value = "";
         } else {
-            showToast("❌ 저장 중 오류가 발생했습니다.");
+            queueOfflineInspection(payload);
         }
     } catch (err) {
-        showToast("❌ 서버와의 통신에 실패했습니다.");
+        queueOfflineInspection(payload);
     }
 }
 

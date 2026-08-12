@@ -12,6 +12,19 @@
 </head>
 <body>
 
+    <!-- Network Status & Offline Sync Bar (Always Visible) -->
+    <div id="network-status-bar" class="network-status-bar online">
+        <div class="network-info">
+            <span id="network-icon">📶</span>
+            <span id="network-text">온라인 상태 (서버 실시간 저장 가능)</span>
+        </div>
+        <div class="network-actions">
+            <button id="btn-sync-offline-queue" class="btn-sync-queue" onclick="syncOfflineQueue()" style="display: none;">
+                🔄 대기 중인 <strong id="offline-queue-count">0</strong>개 일지 서버 동기화
+            </button>
+        </div>
+    </div>
+
     <!-- Main Application Header with Inline Login in Yellow Area -->
     <header class="top-header">
         <div class="header-container">
@@ -19,7 +32,7 @@
                 <span class="logo-icon">💧</span>
                 <div class="brand-text">
                     <h1>RO/EDI 순수 운영점검일지</h1>
-                    <span class="sub-title">B동·C동·D동·E동 현장 점검 시스템</span>
+                    <span class="sub-title">B동·C동·D동·E동 현장 점검 시스템 (음영지역 오프라인 작성 지원)</span>
                 </div>
             </div>
 
@@ -195,5 +208,14 @@
     <div id="toast" class="toast">저장되었습니다</div>
 
     <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => {
+                    console.log('SW Registration failed: ', err);
+                });
+            });
+        }
+    </script>
 </body>
 </html>
