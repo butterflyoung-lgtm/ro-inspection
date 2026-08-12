@@ -101,8 +101,14 @@ async function loadBuildingTabsOnly() {
     }
 }
 
-// Helper to auto-advance focus to the next input field
+let isAdvancing = false;
+
+// Helper to auto-advance focus to the exact next input field in DOM order
 function advanceToNextInput(currentElement) {
+    if (isAdvancing) return;
+    isAdvancing = true;
+    setTimeout(() => { isAdvancing = false; }, 300);
+    
     const inputs = Array.from(document.querySelectorAll("#form-fields-container input:not([disabled]), #form-fields-container select:not([disabled])"));
     const idx = inputs.indexOf(currentElement);
     if (idx !== -1 && idx < inputs.length - 1) {
@@ -119,7 +125,7 @@ function advanceToNextInput(currentElement) {
 async function initApp() {
     document.getElementById("input-date").value = new Date().toISOString().split("T")[0];
     
-    // Global Enter / Mobile Check mark (✓) / Done key handler for fast navigation
+    // Synchronous event capture to prevent mobile OS native double-jump on multi-column inputs
     const container = document.getElementById("form-fields-container");
     if (container) {
         const handleKeyAdvance = function(e) {
@@ -128,10 +134,12 @@ async function initApp() {
                                  e.code === "Enter" || e.code === "NumpadEnter";
             if (isAdvanceKey) {
                 e.preventDefault();
+                e.stopPropagation();
                 advanceToNextInput(e.target);
             }
         };
-        container.addEventListener("keydown", handleKeyAdvance);
+        // Use capture phase (true) so we intercept keydown BEFORE browser native tab jump
+        container.addEventListener("keydown", handleKeyAdvance, true);
     }
     
     // Offline & Network Event Listeners & Active Heartbeat Check
@@ -493,16 +501,17 @@ async function checkRealOnlineStatus() {
     
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const timeoutId = setTimeout(() => controller.abort(), 1500);
         
-        const res = await fetch("/api/buildings", {
+        // Fetch dedicated non-cached /api/ping endpoint with timestamp cachebuster
+        const res = await fetch("/api/ping?t=" + Date.now(), {
             method: "GET",
             cache: "no-store",
             signal: controller.signal
         });
         clearTimeout(timeoutId);
         
-        return res.ok || res.status === 200 || res.status === 304;
+        return res.ok || res.status === 200;
     } catch(e) {
         return false;
     }
@@ -521,36 +530,49 @@ function saveOfflineQueue(queue) {
     updateNetworkStatus();
 }
 
-async function updateNetworkStatus() {
-    isRealOnline = await checkRealOnlineStatus();
-    const queue = getOfflineQueue();
-    
+function renderNetworkStatusUI(isOnline, queueLength) {
     const statusBar = document.getElementById("network-status-bar");
     const iconSpan = document.getElementById("network-icon");
     const textSpan = document.getElementById("network-text");
     const syncBtn = document.getElementById("btn-sync-offline-queue");
     const countSpan = document.getElementById("offline-queue-count");
     
-    if (countSpan) countSpan.textContent = queue.length;
+    if (countSpan) countSpan.textContent = queueLength;
     
-    if (queue.length > 0) {
+    if (queueLength > 0) {
         if (syncBtn) syncBtn.style.display = "inline-flex";
     } else {
         if (syncBtn) syncBtn.style.display = "none";
     }
     
-    if (!isRealOnline) {
+    if (!isOnline) {
         if (statusBar) statusBar.className = "network-status-bar offline";
         if (iconSpan) iconSpan.textContent = "📵";
-        if (textSpan) textSpan.textContent = `음영지역 / 오프라인 상태 (작성 일지 대기 큐 ${queue.length}개 보관 중)`;
+        if (textSpan) textSpan.textContent = `음영지역 / 오프라인 상태 (작성 일지 대기 큐 ${queueLength}개 보관 중)`;
     } else {
         if (statusBar) statusBar.className = "network-status-bar online";
         if (iconSpan) iconSpan.textContent = "📶";
-        if (queue.length > 0) {
-            if (textSpan) textSpan.textContent = `인터넷 연결됨! (대기 중인 오프라인 일지 ${queue.length}개 발견)`;
+        if (queueLength > 0) {
+            if (textSpan) textSpan.textContent = `인터넷 연결됨! (대기 중인 오프라인 일지 ${queueLength}개 발견)`;
         } else {
             if (textSpan) textSpan.textContent = "온라인 상태 (서버 실시간 저장 가능)";
         }
+    }
+}
+
+async function updateNetworkStatus() {
+    const queue = getOfflineQueue();
+    
+    // 1. Instant 0ms UI update based on browser navigator.onLine
+    let isOnline = navigator.onLine;
+    renderNetworkStatusUI(isOnline, queue.length);
+    
+    // 2. Perform async ping check if browser claims online
+    if (isOnline) {
+        isRealOnline = await checkRealOnlineStatus();
+        renderNetworkStatusUI(isRealOnline, queue.length);
+    } else {
+        isRealOnline = false;
     }
 }
 

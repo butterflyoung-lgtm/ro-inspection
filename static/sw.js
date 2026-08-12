@@ -1,10 +1,10 @@
 // Service Worker for RO/EDI Offline Inspection App Support
-const CACHE_NAME = 'ro-edi-inspection-v2';
+const CACHE_NAME = 'ro-edi-inspection-v5';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
-    '/styles.css',
-    '/app.js',
+    '/styles.css?v=4.5',
+    '/app.js?v=4.5',
     '/api/buildings'
 ];
 
@@ -31,8 +31,8 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
     const url = e.request.url;
 
-    // API calls for inspection submission or listings -> Network only (handle queue in app.js)
-    if (url.includes('/api/inspections') || url.includes('/api/trends') || url.includes('/api/login')) {
+    // API calls for inspection submission, ping heartbeat, or listings -> Network only (never cache ping!)
+    if (url.includes('/api/ping') || url.includes('/api/inspections') || url.includes('/api/trends') || url.includes('/api/login')) {
         return;
     }
 

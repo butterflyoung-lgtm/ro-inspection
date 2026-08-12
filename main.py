@@ -25,6 +25,17 @@ app.add_middleware(
 def startup_event():
     database.init_db()
 
+@app.get("/api/ping")
+def ping():
+    return Response(
+        content='{"status":"ok"}',
+        media_type="application/json",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache"
+        }
+    )
+
 class LoginRequest(BaseModel):
     user_id: str
     password: str
